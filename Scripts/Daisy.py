@@ -14,6 +14,17 @@ import matplotlib.pyplot as plt
 import math as m
 
 '''
+---------------------------plotting preferences--------------------------------
+'''
+plt.style.use('seaborn-dark')
+plt.rc('text', usetex=False)
+plt.rc('font', family='times')
+plt.rc('xtick', labelsize=15) 
+plt.rc('ytick', labelsize=15) 
+plt.rc('font', size=15) 
+plt.rc('figure', figsize = (12, 5))
+
+'''
 -------------------------------PARAMS------------------------------------------
 '''
 
@@ -26,7 +37,7 @@ p = 1 # proportion of the planets area which is fertile ground
 beta = 16 # what is this? (W m-2 K-1)
 b = 2.2 # what is this? (W m-2 K-1)
 I_0 = 220 # W m-2
-L = 1 # Percentage of the current solar luminosity
+L = 1.7 # Percentage of the current solar luminosity
 T_opt = 22.5 # optimum temperature daisies
 T_min = 5 # mimimum temperature daisies
 T_max = 40 # maximum temperature daisies
@@ -79,57 +90,40 @@ t_init = 0 # initial time
 t_end = 1e2 # end time of simulation in seconds
 dt = 0.1 # time step in seconds
 time = np.arange(t_init, t_end + dt, dt) # time array
-A_w = np.zeros((len(time),)) # area white daisies
-A_b = np.zeros((len(time),)) # area black daisies
-X_1 = np.zeros((len(time),)) # step 1 Aw
-X_2 = np.zeros((len(time),)) # step 2 Aw
-X_3 = np.zeros((len(time),)) # step 3 Aw
-Y_1 = np.zeros((len(time),)) # step 1 Ab
-Y_2 = np.zeros((len(time),)) # step 2 Ab
-Y_3 = np.zeros((len(time),)) # step 3 Ab
 
-# initial conditions
-idx = 0
-A_w[idx] = 0.5 # start with half of the available area white daisies
-A_b[idx] = 0.5 # start with half of the available area black daisies
-X_1[idx] = 0.5
-X_2[idx] = 0.5
-X_3[idx] = 0.5
-Y_1[idx] = 0.5
-Y_2[idx] = 0.5
-Y_3[idx] = 0.5
+lums = np.arange(0.6, 1.8, 0.05)
+temps = []
 
-for idx in range(len(time) - 1):
+for L in lums:
+    print(L)
+    A_w = np.zeros((len(time),)) # area white daisies
+    A_b = np.zeros((len(time),)) # area black daisies
     
-    X_0 = A_w[idx]
-    Y_0 = A_b[idx]
-    X_1 = X_0 + dA_dt(L, X_0, Y_0, daisy_type = "white") * dt / 2
-    Y_1 = Y_0 + dA_dt(L, X_0, Y_0, daisy_type = "black") * dt / 2
-    X_2 = X_0 + dA_dt(L, X_1, Y_1, daisy_type = "white") * dt / 2
-    Y_2 = Y_0 + dA_dt(L, X_1, Y_1, daisy_type = "black") * dt / 2
-    X_3 = X_0 + dA_dt(L, X_2, Y_2, daisy_type = "white") * dt
-    Y_3 = Y_0 + dA_dt(L, X_2, Y_2, daisy_type = "black") * dt
-    X_4 = X_0 - dA_dt(L, X_3, Y_3, daisy_type = "white") * dt / 2
-    Y_4 = Y_0 - dA_dt(L, X_3, Y_3, daisy_type = "black") * dt / 2
-    A_w[idx + 1] = (X_1 + 2 * X_2 + X_3 - X_4) / 3
-    A_b[idx + 1] = (Y_1 + 2 * Y_2 + Y_3 - Y_4) / 3
+    # initial conditions
+    idx = 0
+    A_w[idx] = 0.5 # start with half of the available area white daisies
+    A_b[idx] = 0.5 # start with half of the available area black daisies
+    for idx in range(len(time) - 1):
+        
+        X_0 = A_w[idx]
+        Y_0 = A_b[idx]
+        X_1 = X_0 + dA_dt(L, X_0, Y_0, daisy_type = "white") * dt / 2
+        Y_1 = Y_0 + dA_dt(L, X_0, Y_0, daisy_type = "black") * dt / 2
+        X_2 = X_0 + dA_dt(L, X_1, Y_1, daisy_type = "white") * dt / 2
+        Y_2 = Y_0 + dA_dt(L, X_1, Y_1, daisy_type = "black") * dt / 2
+        X_3 = X_0 + dA_dt(L, X_2, Y_2, daisy_type = "white") * dt
+        Y_3 = Y_0 + dA_dt(L, X_2, Y_2, daisy_type = "black") * dt
+        X_4 = X_0 - dA_dt(L, X_3, Y_3, daisy_type = "white") * dt / 2
+        Y_4 = Y_0 - dA_dt(L, X_3, Y_3, daisy_type = "black") * dt / 2
+        A_w[idx + 1] = (X_1 + 2 * X_2 + X_3 - X_4) / 3
+        A_b[idx + 1] = (Y_1 + 2 * Y_2 + Y_3 - Y_4) / 3
+    temps.append(avg_T_g(L, A_w[-1], A_b[-1]))
     
-    '''
-    X_1 = dA_dt(L, A_w[idx], A_b[idx], daisy_type = "white")
-    Y_1 = dA_dt(L, A_w[idx], A_b[idx], daisy_type = "black")
-    X_2 = dA_dt(L, A_w[idx] + X_1, A_b[idx] + Y_1, daisy_type = "white")
-    Y_2 = dA_dt(L, A_w[idx] + X_1, A_b[idx] + Y_1, daisy_type = "black")
-    X_3 = dA_dt(L, A_w[idx] + X_2, A_b[idx] + Y_2, daisy_type = "white")
-    Y_3 = dA_dt(L, A_w[idx] + X_2, A_b[idx] + Y_2, daisy_type = "black")
-    X_4 = dA_dt(L, A_w[idx] + X_3, A_b[idx] + Y_3, daisy_type = "white")
-    Y_4 = dA_dt(L, A_w[idx] + X_3, A_b[idx] + Y_3, daisy_type = "black")
-    A_w[idx + 1] = A_w[idx] + dt * (X_1 + 2 * X_2 + 2 * X_3 + X_4) / 6
-    A_b[idx + 1] = A_b[idx] + dt * (Y_1 + 2 * Y_2 + 2 * Y_3 + Y_4) / 6
-    '''
-    print(avg_T_g(L, A_w[idx], A_b[idx]))
-    
-    
-    
+plt.figure()
+plt.plot(lums,temps)
+plt.xlabel("Solar luminosity")
+plt.ylabel("Temp (deg C)")
+plt.grid()
     
     
     
