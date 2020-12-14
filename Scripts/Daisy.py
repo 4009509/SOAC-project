@@ -37,7 +37,7 @@ p = 1 # proportion of the planets area which is fertile ground
 beta = 16 # what is this? (W m-2 K-1)
 b = 2.2 # what is this? (W m-2 K-1)
 I_0 = 220 # W m-2
-L = 1.7 # Percentage of the current solar luminosity
+L = 1 # Percentage of the current solar luminosity
 T_opt = 22.5 # optimum temperature daisies
 T_min = 5 # mimimum temperature daisies
 T_max = 40 # maximum temperature daisies
@@ -91,32 +91,55 @@ t_end = 1e2 # end time of simulation in seconds
 dt = 0.1 # time step in seconds
 time = np.arange(t_init, t_end + dt, dt) # time array
 
-lums = np.arange(0.6, 1.8, 0.05)
+lums = np.concatenate([np.arange(0.6, 2, 0.05), np.arange(1.95, 0.55, -0.05)])
 temps = []
+aws = []
 
 for L in lums:
     print(L)
     A_w = np.zeros((len(time),)) # area white daisies
     A_b = np.zeros((len(time),)) # area black daisies
+    temperatures = []
+    A_w_max = 0
+    A_b_max = 0
     
     # initial conditions
     idx = 0
-    A_w[idx] = 0.5 # start with half of the available area white daisies
-    A_b[idx] = 0.5 # start with half of the available area black daisies
+    if L == lums[0]:
+        A_w[idx] = 0.5 # start with half of the available area white daisies
+        A_b[idx] = 0.5 # start with half of the available area black daisies
+    else:
+        if A_w_max < 0.01 and A_b_max < 0.01:
+            A_w[idx] = 0.01
+            A_b[idx] = 0.01
+        elif A_w_max < 0.01 and A_b_max >= 0.01:
+            A_w[idx] = 0.01
+            A_b[idx] = A_b_max
+        elif A_w_max >= 0.01 and A_b_max < 0.01:
+            A_w[idx] = A_w_max
+            A_b[idx] = 0.01
+        else:
+            A_w[idx] = A_w_max # start with steady state soln previous iteration white daisies
+            A_b[idx] = A_b_max # start with steady state soln previous iteration black daisies
+    # print(A_w[idx], A_b[idx])
     for idx in range(len(time) - 1):
         
         X_0 = A_w[idx]
-        Y_0 = A_b[idx]
+        Y_0 = 0#A_b[idx]
         X_1 = X_0 + dA_dt(L, X_0, Y_0, daisy_type = "white") * dt / 2
-        Y_1 = Y_0 + dA_dt(L, X_0, Y_0, daisy_type = "black") * dt / 2
+        Y_1 = 0#Y_0 + dA_dt(L, X_0, Y_0, daisy_type = "black") * dt / 2
         X_2 = X_0 + dA_dt(L, X_1, Y_1, daisy_type = "white") * dt / 2
-        Y_2 = Y_0 + dA_dt(L, X_1, Y_1, daisy_type = "black") * dt / 2
+        Y_2 = 0#Y_0 + dA_dt(L, X_1, Y_1, daisy_type = "black") * dt / 2
         X_3 = X_0 + dA_dt(L, X_2, Y_2, daisy_type = "white") * dt
-        Y_3 = Y_0 + dA_dt(L, X_2, Y_2, daisy_type = "black") * dt
+        Y_3 = 0#Y_0 + dA_dt(L, X_2, Y_2, daisy_type = "black") * dt
         X_4 = X_0 - dA_dt(L, X_3, Y_3, daisy_type = "white") * dt / 2
-        Y_4 = Y_0 - dA_dt(L, X_3, Y_3, daisy_type = "black") * dt / 2
+        Y_4 = 0#Y_0 - dA_dt(L, X_3, Y_3, daisy_type = "black") * dt / 2
         A_w[idx + 1] = (X_1 + 2 * X_2 + X_3 - X_4) / 3
         A_b[idx + 1] = (Y_1 + 2 * Y_2 + Y_3 - Y_4) / 3
+        temperatures.append(avg_T_g(L, A_w[idx + 1], A_b[idx + 1]))
+    A_w_max = A_w[-1]
+    A_b_max = A_b[-1]
+    aws.append(A_w_max)
     temps.append(avg_T_g(L, A_w[-1], A_b[-1]))
     
 plt.figure()
