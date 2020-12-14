@@ -17,7 +17,7 @@ import math as m
 -------------------------------PARAMS------------------------------------------
 '''
 
-S_0 = 1366 # W/m^2
+S_0 = 1366 # solar constant, W/m^2
 alpha_g = 0.25 # albedo ground
 alpha_w = 0.75 # albbedo white daisies
 alpha_b = 0.15 # albedo black daisies
@@ -27,17 +27,23 @@ beta = 16 # what is this? (W m-2 K-1)
 b = 2.2 # what is this? (W m-2 K-1)
 I_0 = 220 # W m-2
 L = 1 # Percentage of the current solar luminosity
+T_opt = 22.5 # optimum temperature daisies
+T_min = 5 # mimimum temperature daisies
+T_max = 40 # maximum temperature daisies
+
 '''
 ------------------------------FUNCTIONS----------------------------------------
 '''
 
-def alpha_p(A_g, A_w, A_b):
+def alpha_p(A_w, A_b):
+    A_g = p - A_w  - A_b
     return alpha_g * A_g + alpha_w * A_w + alpha_b * A_b
 
-def avg_T_g(L, A_g, A_w, A_b):
-    return (0.25 * S_0 * L * (1 - alpha_p(A_g, A_w, A_b)) - I_0) / b
+def avg_T_g(L, A_w, A_b):
+    alphap = alpha_p(A_w, A_b)
+    return (0.25 * S_0 * L * (1 - alphap) - I_0) / b
 
-def T_daisy(L, A_g, A_w, A_b, daisy_type):
+def T_daisy(L, A_w, A_b, daisy_type):
     if daisy_type == "black":
         alpha_i = alpha_b
     elif daisy_type == "white":
@@ -45,5 +51,86 @@ def T_daisy(L, A_g, A_w, A_b, daisy_type):
     else:
         print("daisy type not recognized")
         alpha_i = np.nan
-    return 0.25 * S_0 * L * (alpha_p(A_g, A_w, A_b) - alpha_i) / (b + beta)
+    alphap = alpha_p(A_w, A_b)
+    T_g = avg_T_g(L, A_w, A_b)
+    return 0.25 * S_0 * L * (alphap - alpha_i) / (b + beta) + T_g
+    
+def growth_rate(L, A_w, A_b, daisy_type):
+    Tdaisy = T_daisy(L, A_w, A_b, daisy_type)
+    return 1 - 4 * (T_opt - Tdaisy)**2 / (T_max - T_min)**2
+
+def dA_dt(L, A_w, A_b, daisy_type):
+    A_g = p - A_w  - A_b
+    if daisy_type == "black":
+        A = A_b
+    elif daisy_type == "white":
+        A = A_w
+    else:
+        print("daisy type not recognized")
+        A = np.nan
+    beta = growth_rate(L, A_w, A_b, daisy_type)
+    return A * (A_g * beta - gamma)
+
+'''
+--------------------------TIME INTEGRATION-------------------------------------
+'''
+
+t_init = 0 # initial time
+t_end = 1e2 # end time of simulation in seconds
+dt = 0.1 # time step in seconds
+time = np.arange(t_init, t_end + dt, dt) # time array
+A_w = np.zeros((len(time),)) # area white daisies
+A_b = np.zeros((len(time),)) # area black daisies
+X_1 = np.zeros((len(time),)) # step 1 Aw
+X_2 = np.zeros((len(time),)) # step 2 Aw
+X_3 = np.zeros((len(time),)) # step 3 Aw
+Y_1 = np.zeros((len(time),)) # step 1 Ab
+Y_2 = np.zeros((len(time),)) # step 2 Ab
+Y_3 = np.zeros((len(time),)) # step 3 Ab
+
+# initial conditions
+idx = 0
+A_w[idx] = 0.5 # start with half of the available area white daisies
+A_b[idx] = 0.5 # start with half of the available area black daisies
+X_1[idx] = 0.5
+X_2[idx] = 0.5
+X_3[idx] = 0.5
+Y_1[idx] = 0.5
+Y_2[idx] = 0.5
+Y_3[idx] = 0.5
+
+for idx in range(len(time) - 1):
+    
+    X_0 = A_w[idx]
+    Y_0 = A_b[idx]
+    X_1 = X_0 + dA_dt(L, X_0, Y_0, daisy_type = "white") * dt / 2
+    Y_1 = Y_0 + dA_dt(L, X_0, Y_0, daisy_type = "black") * dt / 2
+    X_2 = X_0 + dA_dt(L, X_1, Y_1, daisy_type = "white") * dt / 2
+    Y_2 = Y_0 + dA_dt(L, X_1, Y_1, daisy_type = "black") * dt / 2
+    X_3 = X_0 + dA_dt(L, X_2, Y_2, daisy_type = "white") * dt
+    Y_3 = Y_0 + dA_dt(L, X_2, Y_2, daisy_type = "black") * dt
+    X_4 = X_0 - dA_dt(L, X_3, Y_3, daisy_type = "white") * dt / 2
+    Y_4 = Y_0 - dA_dt(L, X_3, Y_3, daisy_type = "black") * dt / 2
+    A_w[idx + 1] = (X_1 + 2 * X_2 + X_3 - X_4) / 3
+    A_b[idx + 1] = (Y_1 + 2 * Y_2 + Y_3 - Y_4) / 3
+    
+    '''
+    X_1 = dA_dt(L, A_w[idx], A_b[idx], daisy_type = "white")
+    Y_1 = dA_dt(L, A_w[idx], A_b[idx], daisy_type = "black")
+    X_2 = dA_dt(L, A_w[idx] + X_1, A_b[idx] + Y_1, daisy_type = "white")
+    Y_2 = dA_dt(L, A_w[idx] + X_1, A_b[idx] + Y_1, daisy_type = "black")
+    X_3 = dA_dt(L, A_w[idx] + X_2, A_b[idx] + Y_2, daisy_type = "white")
+    Y_3 = dA_dt(L, A_w[idx] + X_2, A_b[idx] + Y_2, daisy_type = "black")
+    X_4 = dA_dt(L, A_w[idx] + X_3, A_b[idx] + Y_3, daisy_type = "white")
+    Y_4 = dA_dt(L, A_w[idx] + X_3, A_b[idx] + Y_3, daisy_type = "black")
+    A_w[idx + 1] = A_w[idx] + dt * (X_1 + 2 * X_2 + 2 * X_3 + X_4) / 6
+    A_b[idx + 1] = A_b[idx] + dt * (Y_1 + 2 * Y_2 + 2 * Y_3 + Y_4) / 6
+    '''
+    print(avg_T_g(L, A_w[idx], A_b[idx]))
+    
+    
+    
+    
+    
+    
     
