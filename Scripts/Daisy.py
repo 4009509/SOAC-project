@@ -16,7 +16,7 @@ import math as m
 '''
 ---------------------------plotting preferences--------------------------------
 '''
-plt.style.use('seaborn-dark')
+plt.style.use('seaborn-darkgrid')
 plt.rc('text', usetex=False)
 plt.rc('font', family='times')
 plt.rc('xtick', labelsize=15) 
@@ -29,9 +29,9 @@ plt.rc('figure', figsize = (12, 5))
 '''
 
 S_0 = 1366 # solar constant, W/m^2
-alpha_g = 0.5 # albedo ground
+alpha_g = 0.25 # albedo ground
 alpha_w = 0.75 # albbedo white daisies
-alpha_b = 0.25 # albedo black daisies
+alpha_b = 0.15 # albedo black daisies
 gamma = 0.3 # death rate daisies per unit time
 p = 1 # proportion of the planets area which is fertile ground
 beta = 16 # what is this? (W m-2 K-1)
@@ -50,9 +50,19 @@ def alpha_p(A_w, A_b):
     A_g = p - A_w  - A_b
     return alpha_g * A_g + alpha_w * A_w + alpha_b * A_b
 
+def sol_irradiance(phi):
+    d_m = 1.495978770e9 # distance Sun-Earth
+    d = d_m # assume dm / d to be 1 (perfect circle)
+    delta = 0 # Sun inclination assumed to be zero
+    delta_H = np.arccos(-np.tan(phi) * np.tan(delta)) # daylength
+    return S_0 / m.pi * (d_m / d)**2  * (delta_H * np.sin(phi) * np.sin(delta) + \
+                                          np.cos(phi) * np.cos(delta) * np.sin(delta_H))
+
 def avg_T_g(L, A_w, A_b):
+    #lat = np.radians(lat)
+    #A = sol_irradiance(lat)
     alphap = alpha_p(A_w, A_b)
-    return (0.25 * S_0 * L * (1 - alphap) - I_0) / b
+    return (S_0 / 4 * L * (1 - alphap) - I_0) / b
 
 def T_daisy(L, A_w, A_b, daisy_type):
     if daisy_type == "black":
@@ -79,30 +89,17 @@ def dA_dt(L, A_w, A_b, daisy_type):
     else:
         print("daisy type not recognized")
         A = np.nan
-    beta = growth_rate(L, A_w, A_b, daisy_type)
-    return A * (A_g * beta - gamma)
+    beta_g = growth_rate(L, A_w, A_b, daisy_type)
+    return A * (A_g * beta_g - gamma)
 
-def sol_irradiance(phi):
-    d_m = 1.495978770e9 # distance Sun-Earth
-    d = d_m # assume dm / d to be 1 (perfect circle)
-    delta = 0 # Sun inclination assumed to be zero
-    delta_H = np.arccos(-np.tan(phi) * np.tan(delta)) # daylength
-    return S_0 / m.pi * (d_m / d)**2  * (delta_H * np.sin(phi) * np.sin(delta) + \
-                                         np.cos(phi) * np.cos(delta) * np.sin(delta_H))
         
-def solar_power(phi, bandwidth):
-    Q = sol_irradiance(phi)
-    R = 6.371e6 # radius Earth (meters)
-    radius = np.cos(phi) * R # radius of local circle (intersection) at latitude
-    width = bandwidth * (m.pi * R / 180)
-    area = 2 * m.pi * radius * bandwidth
-    return Q * area
-
-bandwidth = 1
-phis = np.arange(-90, 90 + bandwidth, bandwidth)
-power = 0
-for phi in phis:
-    power += solar_power(phi, bandwidth)
+# def solar_power(phi, bandwidth):
+#     Q = sol_irradiance(phi)
+#     R = 6.371e6 # radius Earth (meters)
+#     radius = np.cos(phi) * R # radius of local circle (intersection) at latitude
+#     width = bandwidth * (m.pi * R / 180)
+#     area = 2 * m.pi * radius * bandwidth
+#     return Q * area
 
 '''
 --------------------------TIME INTEGRATION-------------------------------------
@@ -113,9 +110,10 @@ t_end = 1e1 # end time of simulation in seconds
 dt = 0.01 # time step in seconds
 time = np.arange(t_init, t_end + dt, dt) # time array
 
-lums = np.concatenate([np.arange(0.6, 2.4, 0.05), np.arange(2.35, 0.55, -0.05)])
+lums = np.concatenate([np.arange(0.6, 2, 0.005), np.arange(1.90, 0.55, -0.005)])
 temps = []
 aws = []
+abss = []
 
 for L in lums:
     print(L)
@@ -127,53 +125,56 @@ for L in lums:
     
     # initial conditions
     idx = 0
-    #if L == lums[0]:
-    A_w[idx] = 0.5 # start with half of the available area white daisies
-    A_b[idx] = 0.5 # start with half of the available area black daisies
-    # else:
-    #     if A_w_max == 0 and A_b_max == 0:
-    #         A_w[idx] = 0.01
-    #         A_b[idx] = 0.01
-    #     elif A_w_max == 0 and A_b_max > 0:
-    #         A_w[idx] = 0.01
-    #         A_b[idx] = A_b_max
-    #     elif A_w_max > 0 and A_b_max == 0:
-    #         A_w[idx] = A_w_max
-    #         A_b[idx] = 0.01
-    #     else:
-    #         A_w[idx] = A_w_max # start with steady state soln previous iteration white daisies
-    #         A_b[idx] = A_b_max # start with steady state soln previous iteration black daisies
-    # print(A_w[idx], A_b[idx])
+    if L == lums[0]:
+        A_w[idx] = 0.5 # start with half of the available area white daisies
+        A_b[idx] = 0.5 # start with half of the available area black daisies
+    else:
+        if A_w_max < 1e-3 and A_b_max < 1e-3:
+            A_w[idx] = 0.01
+            A_b[idx] = 0.01
+        elif A_w_max < 1e-3 and A_b_max >= 1e-3:
+            A_w[idx] = 0.01
+            A_b[idx] = A_b_max
+        elif A_w_max >= 1e-3 and A_b_max < 1e-3:
+            A_w[idx] = A_w_max
+            A_b[idx] = 0.01
+        else:
+            A_w[idx] = A_w_max # start with steady state soln previous iteration white daisies
+            A_b[idx] = A_b_max # start with steady state soln previous iteration black daisies
     for idx in range(len(time) - 1):
         
-        X_0 = 0#A_w[idx]
-        Y_0 = A_b[idx]
-        X_1 = 0#X_0 + dA_dt(L, X_0, Y_0, daisy_type = "white") * dt / 2
-        Y_1 = Y_0 + dA_dt(L, X_0, Y_0, daisy_type = "black") * dt / 2
-        X_2 = 0#X_0 + dA_dt(L, X_1, Y_1, daisy_type = "white") * dt / 2
-        Y_2 = Y_0 + dA_dt(L, X_1, Y_1, daisy_type = "black") * dt / 2
-        X_3 = 0#X_0 + dA_dt(L, X_2, Y_2, daisy_type = "white") * dt
-        Y_3 = Y_0 + dA_dt(L, X_2, Y_2, daisy_type = "black") * dt
-        X_4 = 0#X_0 - dA_dt(L, X_3, Y_3, daisy_type = "white") * dt / 2
-        Y_4 = Y_0 - dA_dt(L, X_3, Y_3, daisy_type = "black") * dt / 2
+        X_0 = A_w[idx]
+        Y_0 = 0#A_b[idx]
+        X_1 = X_0 + dA_dt(L, X_0, Y_0, daisy_type = "white") * dt / 2
+        Y_1 = 0#Y_0 + dA_dt(L, X_0, Y_0, daisy_type = "black") * dt / 2
+        X_2 = X_0 + dA_dt(L, X_1, Y_1, daisy_type = "white") * dt / 2
+        Y_2 = 0#Y_0 + dA_dt(L, X_1, Y_1, daisy_type = "black") * dt / 2
+        X_3 = X_0 + dA_dt(L, X_2, Y_2, daisy_type = "white") * dt
+        Y_3 = 0#Y_0 + dA_dt(L, X_2, Y_2, daisy_type = "black") * dt
+        X_4 = X_0 - dA_dt(L, X_3, Y_3, daisy_type = "white") * dt / 2
+        Y_4 = 0#Y_0 - dA_dt(L, X_3, Y_3, daisy_type = "black") * dt / 2
         A_w[idx + 1] = (X_1 + 2 * X_2 + X_3 - X_4) / 3
         A_b[idx + 1] = (Y_1 + 2 * Y_2 + Y_3 - Y_4) / 3
         temperatures.append(avg_T_g(L, A_w[idx + 1], A_b[idx + 1]))
     A_w_max = A_w[-1]
     A_b_max = A_b[-1]
-    print(A_w_max)
     aws.append(A_w_max)
+    abss.append(A_b_max)
     temps.append(avg_T_g(L, A_w[-1], A_b[-1]))
 
 #%%
 plt.figure()
-plt.plot(lums,temps)
+ax = plt.gca()
+ax.set_facecolor('darkgrey')
+plt.plot(lums,temps, color = 'darkblue', label = 'White daisies')
+#plt.plot(lums,abss, color = 'black', label = 'Black daisies')
 plt.xlabel("Solar luminosity")
 #plt.xlim([0.5,1.7])
-plt.ylabel("Temp (deg C)")
+plt.ylabel("Temperature (deg C)")
+plt.title("White daisies, adjusting initial conditions")
+#plt.legend()
 #plt.ylim([0,70])
-plt.grid()
-    
+plt.grid(color = 'grey')    
     
     
     
