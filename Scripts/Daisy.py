@@ -59,10 +59,15 @@ def sol_irradiance(phi):
                                           np.cos(phi) * np.cos(delta) * np.sin(delta_H))
 
 def avg_T_g(L, A_w, A_b):
-    #lat = np.radians(lat)
-    #A = sol_irradiance(lat)
     alphap = alpha_p(A_w, A_b)
     return (S_0 / 4 * L * (1 - alphap) - I_0) / b
+
+def avg_T_lat(lat, L, A_w, A_b):
+    alphap = alpha_p(A_w, A_b)
+    lat = np.radians(lat)
+    Q = sol_irradiance(lat)
+    T_p = avg_T_g(L, A_w, A_b)
+    return (Q * L * (1 - alphap) - I_0 + beta * T_p) / (b + beta)
 
 def T_daisy(L, A_w, A_b, daisy_type):
     if daisy_type == "black":
@@ -92,15 +97,7 @@ def dA_dt(L, A_w, A_b, daisy_type):
     beta_g = growth_rate(L, A_w, A_b, daisy_type)
     return A * (A_g * beta_g - gamma)
 
-        
-# def solar_power(phi, bandwidth):
-#     Q = sol_irradiance(phi)
-#     R = 6.371e6 # radius Earth (meters)
-#     radius = np.cos(phi) * R # radius of local circle (intersection) at latitude
-#     width = bandwidth * (m.pi * R / 180)
-#     area = 2 * m.pi * radius * bandwidth
-#     return Q * area
-
+#%%
 '''
 --------------------------TIME INTEGRATION-------------------------------------
 '''
