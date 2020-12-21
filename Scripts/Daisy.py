@@ -29,7 +29,7 @@ plt.rc('figure', figsize = (12, 5))
 '''
 
 S_0 = 1366 # solar constant, W/m^2
-alpha_g = 0.25 # albedo ground
+alpha_g = 0.75 # albedo ground
 alpha_w = 0.75 # albbedo white daisies
 alpha_b = 0.15 # albedo black daisies
 gamma = 0.3 # death rate daisies per unit time
