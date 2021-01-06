@@ -30,7 +30,7 @@ plt.rc('figure', figsize = (12, 5))
 
 S_0 = 1366 # solar constant, W/m^2
 alpha_g = 0.25 # albedo ground
-alpha_w = 0.75 # albbedo white daisies
+alpha_w = 0.75 # albedo white daisies
 alpha_b = 0.15 # albedo black daisies
 gamma = 0.3 # death rate daisies per unit time
 p = 1 # proportion of the planets area which is fertile ground
@@ -46,7 +46,7 @@ T_max = 40 # maximum temperature daisies
 ------------------------------FUNCTIONS----------------------------------------
 '''
 
-def alpha_p(A_w, A_b):
+def alpha_p(alpha_g, A_w, A_b):
     A_g = p - A_w  - A_b
     return alpha_g * A_g + alpha_w * A_w + alpha_b * A_b
 
@@ -59,15 +59,39 @@ def sol_irradiance(phi):
                                           np.cos(phi) * np.cos(delta) * np.sin(delta_H))
 
 def avg_T_g(L, A_w, A_b):
-    alphap = alpha_p(A_w, A_b)
+    alphap = alpha_p(alpha_g, A_w, A_b)
     return (S_0 / 4 * L * (1 - alphap) - I_0) / b
 
 def avg_T_lat(lat, L, A_w, A_b):
-    alphap = alpha_p(A_w, A_b)
+    if abs(lat) >= 0 and abs(lat) < 60:
+        alpha_g = 0.32
+    elif abs(lat) >= 60 and abs(lat) < 80:
+        alpha_g = 0.50
+    else:
+        alpha_g = 0.62
+    alphap = alpha_p(alpha_g, A_w, A_b)
     lat = np.radians(lat)
     Q = sol_irradiance(lat)
     T_p = avg_T_g(L, A_w, A_b)
-    return (Q * L * (1 - alphap) - I_0 + beta * T_p) / (b + beta)
+    return (Q * L * (1 - alphap) - I_0) / b, \
+        (Q * L * (1 - alphap) - I_0 + beta * T_p) / (b + beta)
+
+lats = np.arange(-90, 91, 1)
+
+T_transfer = [avg_T_lat(lat = lat, L = 1, A_w = 0.1, A_b = 0.75)[1] for lat in lats]
+T_notransfer = [avg_T_lat(lat = lat, L = 1, A_w = 0.1, A_b = 0.75)[0] for lat in lats]
+
+plt.figure()
+ax = plt.gca()
+ax.set_facecolor('darkgrey')
+plt.plot(lats, T_transfer, label = "including meridional heat transfer")
+plt.plot(lats, T_notransfer, label = "excluding meridional heat transfer")
+plt.xlabel("latitude (deg)")
+plt.ylabel("temperature (deg C)")
+plt.grid(color = 'grey')
+plt.legend()
+plt.show()
+
 
 def T_daisy(L, A_w, A_b, daisy_type):
     if daisy_type == "black":
@@ -77,7 +101,7 @@ def T_daisy(L, A_w, A_b, daisy_type):
     else:
         print("daisy type not recognized")
         alpha_i = np.nan
-    alphap = alpha_p(A_w, A_b)
+    alphap = alpha_p(alpha_g, A_w, A_b)
     T_g = avg_T_g(L, A_w, A_b)
     return 0.25 * S_0 * L * (alphap - alpha_i) / (b + beta) + T_g
     
@@ -107,10 +131,14 @@ t_end = 1e1 # end time of simulation in seconds
 dt = 0.01 # time step in seconds
 time = np.arange(t_init, t_end + dt, dt) # time array
 
-lums = np.concatenate([np.arange(0.6, 2, 0.005), np.arange(1.90, 0.55, -0.005)])
+lums = np.arange(1.90, 0.55, -0.05)
+#lums = np.arange(0.6, 2, 0.05)
+#lums = np.concatenate([np.arange(0.6, 2, 0.05), np.arange(1.90, 0.55, -0.05)])
 temps = []
 aws = []
 abss = []
+growth = []
+Tempdaisy = []
 
 for L in lums:
     print(L)
@@ -153,6 +181,8 @@ for L in lums:
         A_w[idx + 1] = (X_1 + 2 * X_2 + X_3 - X_4) / 3
         A_b[idx + 1] = (Y_1 + 2 * Y_2 + Y_3 - Y_4) / 3
         temperatures.append(avg_T_g(L, A_w[idx + 1], A_b[idx + 1]))
+    growth.append(growth_rate(L, A_w[-1], A_b[-1], daisy_type = "white"))
+    Tempdaisy.append(T_daisy(L, A_w[-1], A_b[-1], daisy_type = "white"))
     A_w_max = A_w[-1]
     A_b_max = A_b[-1]
     aws.append(A_w_max)
@@ -173,5 +203,27 @@ plt.title("White daisies, adjusting initial conditions")
 #plt.ylim([0,70])
 plt.grid(color = 'grey')    
     
-    
-    
+plt.figure()
+ax = plt.gca()
+ax.set_facecolor('darkgrey')
+plt.plot(temps, aws, color = 'white', label = 'White daisies')
+plt.xlabel("Solar luminosity")
+#plt.xlim([0.5,1.7])
+plt.ylabel("Area (-)")
+plt.title("White daisies, adjusting initial conditions")
+#plt.legend()
+#plt.ylim([0,70])
+plt.grid(color = 'grey')    
+
+plt.figure()
+ax = plt.gca()
+ax.set_facecolor('darkgrey')
+plt.plot(Tempdaisy, growth, color = 'white', label = 'White daisies')
+plt.axhline(gamma)
+plt.xlabel("Solar luminosity")
+#plt.xlim([0.5,1.7])
+plt.ylabel("Area (-)")
+plt.title("White daisies, adjusting initial conditions")
+#plt.legend()
+#plt.ylim([0,70])
+plt.grid(color = 'grey') 
