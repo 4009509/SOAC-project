@@ -42,9 +42,11 @@ T_opt = 22.5 # optimum temperature daisies
 T_min = 5 # mimimum temperature daisies
 T_max = 40 # maximum temperature daisies
 
+#%%
 '''
 ------------------------------FUNCTIONS----------------------------------------
 '''
+
 
 def alpha_p(alpha_g, A_w, A_b):
     A_g = p - A_w  - A_b
@@ -80,18 +82,6 @@ lats = np.arange(-90, 91, 1)
 
 T_transfer = [avg_T_lat(lat = lat, L = 1, A_w = 0.1, A_b = 0.75)[1] for lat in lats]
 T_notransfer = [avg_T_lat(lat = lat, L = 1, A_w = 0.1, A_b = 0.75)[0] for lat in lats]
-
-plt.figure()
-ax = plt.gca()
-ax.set_facecolor('darkgrey')
-plt.plot(lats, T_transfer, label = "including meridional heat transfer")
-plt.plot(lats, T_notransfer, label = "excluding meridional heat transfer")
-plt.xlabel("latitude (deg)")
-plt.ylabel("temperature (deg C)")
-plt.grid(color = 'grey')
-plt.legend()
-plt.show()
-
 
 def T_daisy(L, A_w, A_b, daisy_type):
     if daisy_type == "black":
@@ -192,7 +182,22 @@ for L in lums:
     temps.append(avg_T_g(L, A_w[-1], A_b[-1]))
 
 #%%
-plt.figure()
+'''
+--------------------------Figures-------------------------------------
+'''
+
+plt.figure(1)
+ax = plt.gca()
+ax.set_facecolor('darkgrey')
+plt.plot(lats, T_transfer, label = "including meridional heat transfer")
+plt.plot(lats, T_notransfer, label = "excluding meridional heat transfer")
+plt.xlabel("latitude (deg)")
+plt.ylabel("temperature (deg C)")
+plt.grid(color = 'grey')
+plt.legend()
+plt.show()
+
+plt.figure(2)
 ax = plt.gca()
 ax.set_facecolor('darkgrey')
 plt.plot(lums,temps, color = 'darkblue', label = 'White daisies')
@@ -205,7 +210,7 @@ plt.title("White daisies, adjusting initial conditions")
 #plt.ylim([0,70])
 plt.grid(color = 'grey')    
     
-plt.figure()
+plt.figure(3)
 ax = plt.gca()
 ax.set_facecolor('darkgrey')
 plt.plot(temps, aws, color = 'white', label = 'White daisies')
@@ -217,7 +222,7 @@ plt.title("White daisies, adjusting initial conditions")
 #plt.ylim([0,70])
 plt.grid(color = 'grey')    
 
-plt.figure()
+plt.figure(4)
 ax = plt.gca()
 ax.set_facecolor('darkgrey')
 plt.plot(Tempdaisy, growth, color = 'white', label = 'White daisies')
