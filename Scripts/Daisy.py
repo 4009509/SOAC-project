@@ -107,7 +107,7 @@ t_end = 1e1 # end time of simulation in seconds
 dt = 0.01 # time step in seconds
 time = np.arange(t_init, t_end + dt, dt) # time array
 
-lums = np.concatenate([np.arange(0.6, 2, 0.005), np.arange(1.90, 0.55, -0.005)])
+lums = np.concatenate([np.arange(0.6, 2, 0.005), np.arange(1.99, 0.55, -0.005)])
 temps = []
 aws = []
 abss = []
