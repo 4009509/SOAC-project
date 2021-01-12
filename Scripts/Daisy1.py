@@ -29,9 +29,9 @@ plt.rc('figure', figsize = (12, 5))
 '''
 
 S_0 = 1366 # solar constant, W/m^2
-alpha_g = 0.25 # albedo ground
+alpha_g = 0.5 # albedo ground
 alpha_w = 0.75 # albbedo white daisies
-alpha_b = 0.15 # albedo black daisies
+alpha_b = 0.25 # albedo black daisies
 gamma = 0.3 # death rate daisies per unit time
 p = 1 # proportion of the planets area which is fertile ground
 beta = 16 # what is this? (W m-2 K-1)
@@ -87,13 +87,14 @@ def dA_dt(L, A_w, A_b, daisy_type):
 '''
 
 t_init = 0 # initial time
-t_end = 1e2 # end time of simulation in seconds
-dt = 0.1 # time step in seconds
+t_end = 10 # end time of simulation in seconds
+dt = 0.01 # time step in seconds
 time = np.arange(t_init, t_end + dt, dt) # time array
 
-lums = np.concatenate([np.arange(0.6, 2, 0.05), np.arange(1.95, 0.55, -0.05)])
+lums = np.concatenate([np.arange(0.6, 2.4, 0.05), np.arange(2.35, 0.55, -0.05)])
 temps = []
 aws = []
+abss = []
 
 for L in lums:
     print(L)
@@ -125,29 +126,33 @@ for L in lums:
     for idx in range(len(time) - 1):
         
         X_0 = A_w[idx]
-        Y_0 = 0#A_b[idx]
+        Y_0 = A_b[idx]
         X_1 = X_0 + dA_dt(L, X_0, Y_0, daisy_type = "white") * dt / 2
-        Y_1 = 0#Y_0 + dA_dt(L, X_0, Y_0, daisy_type = "black") * dt / 2
+        Y_1 = Y_0 + dA_dt(L, X_0, Y_0, daisy_type = "black") * dt / 2
         X_2 = X_0 + dA_dt(L, X_1, Y_1, daisy_type = "white") * dt / 2
-        Y_2 = 0#Y_0 + dA_dt(L, X_1, Y_1, daisy_type = "black") * dt / 2
+        Y_2 = Y_0 + dA_dt(L, X_1, Y_1, daisy_type = "black") * dt / 2
         X_3 = X_0 + dA_dt(L, X_2, Y_2, daisy_type = "white") * dt
-        Y_3 = 0#Y_0 + dA_dt(L, X_2, Y_2, daisy_type = "black") * dt
+        Y_3 = Y_0 + dA_dt(L, X_2, Y_2, daisy_type = "black") * dt
         X_4 = X_0 - dA_dt(L, X_3, Y_3, daisy_type = "white") * dt / 2
-        Y_4 = 0#Y_0 - dA_dt(L, X_3, Y_3, daisy_type = "black") * dt / 2
+        Y_4 = Y_0 - dA_dt(L, X_3, Y_3, daisy_type = "black") * dt / 2
         A_w[idx + 1] = (X_1 + 2 * X_2 + X_3 - X_4) / 3
         A_b[idx + 1] = (Y_1 + 2 * Y_2 + Y_3 - Y_4) / 3
-        temperatures.append(avg_T_g(L, A_w[idx + 1], A_b[idx + 1]))
+        #temperatures.append(avg_T_g(L, A_w[idx + 1], A_b[idx + 1]))
     A_w_max = A_w[-1]
     A_b_max = A_b[-1]
     aws.append(A_w_max)
+    abss.append(A_b_max)
     temps.append(avg_T_g(L, A_w[-1], A_b[-1]))
     
+  
+    
 plt.figure()
-plt.plot(lums,temps)
+plt.plot(lums,aws)
+plt.plot(lums,abss)
 plt.xlabel("Solar luminosity")
 plt.ylabel("Temp (deg C)")
 plt.grid()
-    
-    
+
+
     
     
