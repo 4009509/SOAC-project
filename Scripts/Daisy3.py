@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Dec 10 18:16:01 2020
+
 @author: T Y van der Duim
 """
 
@@ -74,7 +75,7 @@ class Daisies:
         return 0.25 * S_0 * self.L * (self.alpha_p() - alpha_i) / (b + beta) + self.avg_T_g()
     
     def growth_rate(self, daisytype):
-        return 1 - 4 * (T_opt - self.T_daisy(daisytype))**2 / (T_max - T_min)**2
+        return max(1 - 4 * (T_opt - self.T_daisy(daisytype))**2 / (T_max - T_min)**2, 0)
     
     def dA_dt(self, daisytype):
         if daisytype == "black":
@@ -137,15 +138,14 @@ T_notransfer = [avg_T_lat(lat = lat, L = 1, A_w = 0.1, A_b = 0.75)[0] for lat in
 '''
 --------------------------TIME INTEGRATION-------------------------------------
 '''
-    
-    
+
 t_init = 0 # initial time
 t_end = 10 # end time of simulation in seconds
 maxstep = 1000 # maximum nr of steps
-time = np.linspace(t_init, t_end, maxstep) # time array
+time = np.linspace(t_init, t_end, maxstep + 1) # time array
 dt = (t_end - t_init) / maxstep
 
-luminosities = np.concatenate([np.arange(0.6, 5, 0.1), np.arange(4.9, 0.5, -0.1)])
+luminosities = np.concatenate([np.arange(0.6, 3, 0.05), np.arange(2.95, 0.5, -0.05)])
 A_w_steady = 0.5
 A_b_steady = 0.5
 
@@ -163,7 +163,7 @@ for idx, L in enumerate(luminosities):
     print("computing steady state solution for luminosity #{0} out of {1}.".format(idx + 1, len(luminosities)))
     A_w = np.zeros((len(time),)) # area white daisies
     A_b = np.zeros((len(time),)) # area black daisies
-    
+
     # initial conditions
     it = 0
     if idx == 0:
@@ -217,22 +217,32 @@ plt.grid(color = 'grey')
 plt.legend()
 plt.show()
 
-fig, (ax1, ax2) = plt.subplots(nrows = 2, sharex=True)
+fig, (ax1, ax2) = plt.subplots(nrows=2, sharex=True)
 
 ax1.set_facecolor('darkgrey')
 ax1.plot(luminosities[:int(len(luminosities) / 2)], area_white_steady[:int(len(luminosities) / 2)],\
          color = 'white', label = 'White daisies (increasing L)')
-plt.plot(temperatures[int(len(luminosities) / 2):], area_white_steady[int(len(luminosities) / 2):],\
+ax1.plot(luminosities[int(len(luminosities) / 2):], area_white_steady[int(len(luminosities) / 2):],\
          color = 'white', linestyle = 'dashed', label = 'White daisies (decreasing L)')
-plt.plot(temperatures[:int(len(luminosities) / 2)], area_black_steady[:int(len(luminosities) / 2)],\
+ax1.plot(luminosities[:int(len(luminosities) / 2)], area_black_steady[:int(len(luminosities) / 2)],\
          color = 'black', label = 'Black daisies (increasing L)')
-plt.plot(temperatures[int(len(luminosities) / 2):], area_black_steady[int(len(luminosities) / 2):],\
-         color = 'black', linestyle = 'dashed', label = 'Black daisies (decreasing L)')
-plt.xlabel("Temperature (deg C)")
-plt.ylabel("Area (-)")
-plt.title("Run for {0} daisies, adjusting initial conditions".format(daisy_setting))
-plt.legend()
-plt.grid(color = 'grey')    
+ax1.plot(luminosities[int(len(luminosities) / 2):], area_black_steady[int(len(luminosities) / 2):],\
+        color = 'black', linestyle = 'dashed', label = 'Black daisies (decreasing L)')
+ax1.set_ylabel("Temperature (deg C)")
+ax1.legend()
+ax1.grid(color = 'grey')
+
+ax2.set_facecolor('darkgrey')
+ax2.plot(luminosities[:int(len(luminosities) / 2)], temperatures[:int(len(luminosities) / 2)],\
+         color = 'darkblue', label = "increasing L")
+ax2.plot(luminosities[int(len(luminosities) / 2):], temperatures[int(len(luminosities) / 2):],\
+         color = 'darkblue', linestyle = 'dashed', label = "decreasing L")
+ax2.legend()
+ax2.set_ylabel("Area (-)")
+ax2.set_xlabel("Solar luminosity")
+ax2.grid(color = 'grey')
+
+fig.suptitle("Run for {0} daisies, adjusting initial conditions".format(daisy_setting))
 
 plt.figure()
 ax = plt.gca()
