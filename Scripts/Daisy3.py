@@ -50,10 +50,17 @@ T_max = 40 # maximum temperature daisies
 
 class Daisies:
     
-    def __init__(self, A_w, A_b, L):
+    def __init__(self, A_w, A_b, L, *args): # optionally add a specific latitude
         self.A_w = A_w
         self.A_b = A_b
         self.L = L
+        self.phi = args
+        if self.phi:
+            self.phi = np.radians(args)[0]
+
+    '''
+    ---------------------------------GLOBAL------------------------------------
+    '''
         
     def A_g(self):
         return p - self.A_w  - self.A_b
@@ -63,7 +70,33 @@ class Daisies:
             
     def avg_T_g(self):
         return (S_0 / 4 * self.L * (1 - self.alpha_p()) - I_0) / b
-            
+    
+    '''
+    ---------------------LATITUDE DEPENDENCE (LOCAL)---------------------------
+    '''
+    
+    def sol_irradiance(self):
+        d_m = 1.495978770e9 # distance Sun-Earth
+        d = d_m # assume dm / d to be 1 (perfect circle)
+        delta = 0 # Sun inclination assumed to be zero
+        delta_H = np.arccos(-np.tan(self.phi) * np.tan(delta)) # daylength
+        return S_0 / m.pi * (d_m / d)**2  * (delta_H * np.sin(self.phi) * np.sin(delta) + \
+                                              np.cos(self.phi) * np.cos(delta) * np.sin(delta_H))
+    
+    def avg_T_lat(self):
+        if abs(self.phi) >= 0 and abs(self.phi) < np.radians(60):
+            alpha_g = 0.32
+        elif abs(self.phi) >= np.radians(60) and abs(self.phi) < np.radians(80):
+            alpha_g = 0.50
+        else:
+            alpha_g = 0.62
+        return (self.sol_irradiance() * self.L * (1 - self.alpha_p()) - I_0) / b, \
+            (self.sol_irradiance() * self.L * (1 - self.alpha_p()) - I_0 + beta * self.avg_T_g()) / (b + beta)
+    
+    '''
+    ---------------------------DAISY DYNAMICS----------------------------------
+    '''
+    
     def T_daisy(self, daisytype):
         if daisytype == "black":
             alpha_i = alpha_b
@@ -72,7 +105,10 @@ class Daisies:
         else:
             print("daisy type not recognized")
             alpha_i = np.nan
-        return 0.25 * S_0 * self.L * (self.alpha_p() - alpha_i) / (b + beta) + self.avg_T_g()
+        if self.phi:
+            return 0.25 * S_0 * self.L * (self.alpha_p() - alpha_i) / (b + beta) + self.avg_T_lat()
+        else:
+            return 0.25 * S_0 * self.L * (self.alpha_p() - alpha_i) / (b + beta) + self.avg_T_g()
     
     def growth_rate(self, daisytype):
         return max(1 - 4 * (T_opt - self.T_daisy(daisytype))**2 / (T_max - T_min)**2, 0)
@@ -102,37 +138,11 @@ class Daisies:
                          "white & black" : (Y_1 + 2 * Y_2 + Y_3 - Y_4) / 3}
         return white_daisies[include_daisy], black_daisies[include_daisy]
 
-
-'''
--------------------------LATITUDE DEPENDENCE-----------------------------------
-'''
-
-def sol_irradiance(phi):
-    d_m = 1.495978770e9 # distance Sun-Earth
-    d = d_m # assume dm / d to be 1 (perfect circle)
-    delta = 0 # Sun inclination assumed to be zero
-    delta_H = np.arccos(-np.tan(phi) * np.tan(delta)) # daylength
-    return S_0 / m.pi * (d_m / d)**2  * (delta_H * np.sin(phi) * np.sin(delta) + \
-                                          np.cos(phi) * np.cos(delta) * np.sin(delta_H))
-
-def avg_T_lat(lat, L, A_w, A_b):
-    if abs(lat) >= 0 and abs(lat) < 60:
-        alpha_g = 0.32
-    elif abs(lat) >= 60 and abs(lat) < 80:
-        alpha_g = 0.50
-    else:
-        alpha_g = 0.62
-    alphap = Daisies(A_w, A_b, L).alpha_p()
-    lat = np.radians(lat)
-    Q = sol_irradiance(lat)
-    T_p = Daisies(A_w, A_b, L).avg_T_g()
-    return (Q * L * (1 - alphap) - I_0) / b, \
-        (Q * L * (1 - alphap) - I_0 + beta * T_p) / (b + beta)
-
 lats = np.arange(-90, 91, 1)
 
-T_transfer = [avg_T_lat(lat = lat, L = 1, A_w = 0.1, A_b = 0.75)[1] for lat in lats]
-T_notransfer = [avg_T_lat(lat = lat, L = 1, A_w = 0.1, A_b = 0.75)[0] for lat in lats]
+lat_temps = [Daisies(0.1, 0.7, 1, lat).avg_T_lat()[1] for lat in lats]
+#T_transfer = [avg_T_lat(lat = lat, L = 1, A_w = 0.1, A_b = 0.75)[1] for lat in lats]
+#T_notransfer = [avg_T_lat(lat = lat, L = 1, A_w = 0.1, A_b = 0.75)[0] for lat in lats]
 
 #%%
 '''
