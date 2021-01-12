@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Dec 10 18:16:01 2020
-
 @author: T Y van der Duim
 """
 
@@ -217,7 +216,7 @@ plt.grid(color = 'grey')
 plt.legend()
 plt.show()
 
-fig, (ax1, ax2) = plt.subplots(nrows=2, sharex=True)
+fig, (ax1, ax2) = plt.subplots(nrows = 2, sharex=True)
 
 ax1.set_facecolor('darkgrey')
 ax1.plot(luminosities[:int(len(luminosities) / 2)], area_white_steady[:int(len(luminosities) / 2)],\

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Dec 10 18:16:01 2020
-
 @author: T Y van der Duim
 """
 
