@@ -157,7 +157,7 @@ Temp_white_daisy = np.zeros((len(luminosities),))
 Temp_black_daisy = np.zeros((len(luminosities),))
 temperatures = np.zeros((len(luminosities),))
 
-daisy_setting = "white & black"
+daisy_setting = "white"
 
 for idx, L in enumerate(luminosities):
     print("computing steady state solution for luminosity #{0} out of {1}.".format(idx + 1, len(luminosities)))
@@ -228,7 +228,7 @@ ax1.plot(luminosities[:int(len(luminosities) / 2)], area_black_steady[:int(len(l
          color = 'black', label = 'Black daisies (increasing L)')
 ax1.plot(luminosities[int(len(luminosities) / 2):], area_black_steady[int(len(luminosities) / 2):],\
         color = 'black', linestyle = 'dashed', label = 'Black daisies (decreasing L)')
-ax1.set_ylabel("Temperature (deg C)")
+ax1.set_ylabel("Area (-)")
 ax1.legend()
 ax1.grid(color = 'grey')
 
@@ -238,20 +238,29 @@ ax2.plot(luminosities[:int(len(luminosities) / 2)], temperatures[:int(len(lumino
 ax2.plot(luminosities[int(len(luminosities) / 2):], temperatures[int(len(luminosities) / 2):],\
          color = 'darkblue', linestyle = 'dashed', label = "decreasing L")
 ax2.legend()
-ax2.set_ylabel("Area (-)")
+ax2.set_ylabel("Temperature (deg C)")
 ax2.set_xlabel("Solar luminosity")
 ax2.grid(color = 'grey')
 
 fig.suptitle("Run for {0} daisies, adjusting initial conditions".format(daisy_setting))
 
+
 plt.figure()
 ax = plt.gca()
 ax.set_facecolor('darkgrey')
-plt.plot(Temp_white_daisy, growth_white, color = 'white', label = 'Growth rate white daisies')
-plt.plot(Temp_black_daisy, growth_black, color = 'black', label = 'Death rate black daisies')
+plt.plot(luminosities[:int(len(luminosities) / 2)], growth_white[:int(len(luminosities) / 2)],\
+         color = 'white', label = 'Growth rate white daisies (increasing L)')
+plt.plot(luminosities[int(len(luminosities) / 2):], growth_white[int(len(luminosities) / 2):],\
+         color = 'white', linestyle = 'dashed', label = 'Growth rate white daisies (decreasing L)')
+plt.plot(luminosities[:int(len(luminosities) / 2)], growth_black[:int(len(luminosities) / 2)],\
+         color = 'black', label = 'Growth rate black daisies (increasing L)')
+plt.plot(luminosities[int(len(luminosities) / 2):], growth_black[int(len(luminosities) / 2):],\
+        color = 'black', linestyle = 'dashed', label = 'Growth rate black daisies (decreasing L)')
+#plt.plot(Temp_white_daisy, growth_white, color = 'white', label = 'Growth rate white daisies')
+#plt.plot(Temp_black_daisy, growth_black, color = 'black', label = 'Death rate black daisies')
 plt.axhline(gamma, label = "Death rate")
 plt.xlabel("Daisy temperature (deg C)")
-plt.ylim([-2, 2])
+#plt.ylim([-2, 2])
 plt.ylabel("Growth/death rate (-)")
 plt.title("Run for {0} daisies, adjusting initial conditions".format(daisy_setting))
 plt.legend()
