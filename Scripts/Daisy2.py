@@ -29,12 +29,12 @@ plt.rc('figure', figsize = (12, 5))
 '''
 
 S_0 = 1366 # solar constant, W/m^2
-alpha_g = 0.25 # albedo ground
+alpha_g = 0.5 # albedo ground
 alpha_w = 0.75 # albedo white daisies
-alpha_b = 0.15 # albedo black daisies
+alpha_b = 0.25 # albedo black daisies
 gamma = 0.3 # death rate daisies per unit time
 p = 1 # proportion of the planets area which is fertile ground
-beta = 6 # Meridional heat transport (W m-2 K-1)
+beta = 16 # Meridional heat transport (W m-2 K-1)
 b = 2.2 # Net outgoing longwave radiation due to daisies (W m-2 K-1)
 I_0 = 220 # Cnstant outgoing radiation due to planet
 L = 1 # Percentage of the current solar luminosity
@@ -132,9 +132,8 @@ dt = 0.01 # time step in seconds
 time = np.arange(t_init, t_end + dt, dt) # time array
 
 lums = np.concatenate([np.arange(0.6, 2, 0.005), np.arange(1.99, 0.55, -0.005)])
-lums = np.arange(1.90, 0.55, -0.05)
+#lums = np.arange(1.90, 0.55, -0.05)
 #lums = np.arange(0.6, 2, 0.05)
-#lums = np.concatenate([np.arange(0.6, 2, 0.05), np.arange(1.90, 0.55, -0.05)])
 
 temps = []
 aws = []
@@ -171,15 +170,15 @@ for L in lums:
     for idx in range(len(time) - 1):
         
         X_0 = A_w[idx]
-        Y_0 = 0#A_b[idx]
+        Y_0 = A_b[idx]
         X_1 = X_0 + dA_dt(L, X_0, Y_0, daisy_type = "white") * dt / 2
-        Y_1 = 0#Y_0 + dA_dt(L, X_0, Y_0, daisy_type = "black") * dt / 2
+        Y_1 = Y_0 + dA_dt(L, X_0, Y_0, daisy_type = "black") * dt / 2
         X_2 = X_0 + dA_dt(L, X_1, Y_1, daisy_type = "white") * dt / 2
-        Y_2 = 0#Y_0 + dA_dt(L, X_1, Y_1, daisy_type = "black") * dt / 2
+        Y_2 = Y_0 + dA_dt(L, X_1, Y_1, daisy_type = "black") * dt / 2
         X_3 = X_0 + dA_dt(L, X_2, Y_2, daisy_type = "white") * dt
-        Y_3 = 0#Y_0 + dA_dt(L, X_2, Y_2, daisy_type = "black") * dt
+        Y_3 = Y_0 + dA_dt(L, X_2, Y_2, daisy_type = "black") * dt
         X_4 = X_0 - dA_dt(L, X_3, Y_3, daisy_type = "white") * dt / 2
-        Y_4 = 0#Y_0 - dA_dt(L, X_3, Y_3, daisy_type = "black") * dt / 2
+        Y_4 = Y_0 - dA_dt(L, X_3, Y_3, daisy_type = "black") * dt / 2
         A_w[idx + 1] = (X_1 + 2 * X_2 + X_3 - X_4) / 3
         A_b[idx + 1] = (Y_1 + 2 * Y_2 + Y_3 - Y_4) / 3
         temperatures.append(avg_T_g(L, A_w[idx + 1], A_b[idx + 1]))
@@ -208,7 +207,8 @@ plt.grid(color = 'grey')
 plt.figure()
 ax = plt.gca()
 ax.set_facecolor('darkgrey')
-plt.plot(temps, aws, color = 'white', label = 'White daisies')
+plt.plot(lums, aws, color = 'white', label = 'White daisies')
+plt.plot(lums, abss, color = 'black', label = 'Black daisies')
 plt.xlabel("Solar luminosity")
 #plt.xlim([0.5,1.7])
 plt.ylabel("Area (-)")
