@@ -37,7 +37,7 @@ gamma = 0.3 # death rate daisies per unit time
 p = 1 # proportion of the planets area which is fertile ground
 beta = 16 # Meridional heat transport (W m-2 K-1)
 b = 2.2 # Net outgoing longwave radiation due to daisies (W m-2 K-1)
-I_0 = 220 # Cnstant outgoing radiation due to planet (W m-2)
+I_0 = 220 # Constant outgoing radiation due to planet (W m-2)
 L = 1 # Percentage of the current solar luminosity
 T_opt = 22.5 # optimum temperature daisies
 T_min = 5 # mimimum temperature daisies
@@ -151,13 +151,14 @@ A_b_steady = 0.5
 
 area_white_steady = np.zeros((len(luminosities),))
 area_black_steady = np.zeros((len(luminosities),))
+area_total = np.zeros((len(luminosities),))
 growth_white = np.zeros((len(luminosities),))
 growth_black = np.zeros((len(luminosities),))
 Temp_white_daisy = np.zeros((len(luminosities),))
 Temp_black_daisy = np.zeros((len(luminosities),))
 temperatures = np.zeros((len(luminosities),))
 
-daisy_setting = "white"
+daisy_setting = "white & black"
 
 for idx, L in enumerate(luminosities):
     print("computing steady state solution for luminosity #{0} out of {1}.".format(idx + 1, len(luminosities)))
@@ -190,6 +191,7 @@ for idx, L in enumerate(luminosities):
     A_b_steady = A_b[-1]
     area_white_steady[idx] = A_w_steady
     area_black_steady[idx] = A_b_steady
+    area_total[idx] = A_w_steady + A_b_steady
     growth_white[idx] = Daisies(A_w_steady, A_b_steady, L).growth_rate(daisytype = "white")
     growth_black[idx] = Daisies(A_w_steady, A_b_steady, L).growth_rate(daisytype = "black")
     Temp_white_daisy[idx] = Daisies(A_w_steady, A_b_steady, L).T_daisy(daisytype = "white")
@@ -224,6 +226,10 @@ ax1.plot(luminosities[:int(len(luminosities) / 2)], area_white_steady[:int(len(l
          color = 'white', label = 'White daisies (increasing L)')
 ax1.plot(luminosities[int(len(luminosities) / 2):], area_white_steady[int(len(luminosities) / 2):],\
          color = 'white', linestyle = 'dashed', label = 'White daisies (decreasing L)')
+ax1.plot(luminosities[:int(len(luminosities) / 2)], area_total[:int(len(luminosities) / 2)],\
+         color = 'blue', label = 'All daisies (increasing L)')
+ax1.plot(luminosities[int(len(luminosities) / 2):], area_total[int(len(luminosities) / 2):],\
+         color = 'blue', linestyle =  'dashed', label = 'All daisies (decreasing L)')
 ax1.plot(luminosities[:int(len(luminosities) / 2)], area_black_steady[:int(len(luminosities) / 2)],\
          color = 'black', label = 'Black daisies (increasing L)')
 ax1.plot(luminosities[int(len(luminosities) / 2):], area_black_steady[int(len(luminosities) / 2):],\
@@ -243,7 +249,6 @@ ax2.set_xlabel("Solar luminosity")
 ax2.grid(color = 'grey')
 
 fig.suptitle("Run for {0} daisies, adjusting initial conditions".format(daisy_setting))
-
 
 plt.figure()
 ax = plt.gca()
