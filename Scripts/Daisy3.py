@@ -140,7 +140,7 @@ class Daisies:
 
 lats = np.arange(-90, 91, 1)
 
-lat_temps = [Daisies(0.1, 0.7, 1, lat).avg_T_lat()[1] for lat in lats]
+lat_temps = [Daisies(0.1, 0.75, 1, lat).avg_T_lat()[1] for lat in lats]
 #T_transfer = [avg_T_lat(lat = lat, L = 1, A_w = 0.1, A_b = 0.75)[1] for lat in lats]
 #T_notransfer = [avg_T_lat(lat = lat, L = 1, A_w = 0.1, A_b = 0.75)[0] for lat in lats]
 
@@ -218,16 +218,16 @@ for idx, L in enumerate(luminosities):
 -------------------------------FIGURES-----------------------------------------
 '''
 
-plt.figure()
-ax = plt.gca()
-ax.set_facecolor('darkgrey')
-plt.plot(lats, T_transfer, label = "including meridional heat transfer")
-plt.plot(lats, T_notransfer, label = "excluding meridional heat transfer")
-plt.xlabel("latitude (deg)")
-plt.ylabel("temperature (deg C)")
-plt.grid(color = 'grey')
-plt.legend()
-plt.show()
+# plt.figure()
+# ax = plt.gca()
+# ax.set_facecolor('darkgrey')
+# plt.plot(lats, T_transfer, label = "including meridional heat transfer")
+# plt.plot(lats, T_notransfer, label = "excluding meridional heat transfer")
+# plt.xlabel("latitude (deg)")
+# plt.ylabel("temperature (deg C)")
+# plt.grid(color = 'grey')
+# plt.legend()
+# plt.show()
 
 fig, (ax1, ax2) = plt.subplots(nrows=2, sharex=True)
 

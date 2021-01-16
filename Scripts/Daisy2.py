@@ -29,12 +29,12 @@ plt.rc('figure', figsize = (12, 5))
 '''
 
 S_0 = 1366 # solar constant, W/m^2
-alpha_g = 0.5 # albedo ground
+alpha_g = 0.25 # albedo ground
 alpha_w = 0.75 # albedo white daisies
-alpha_b = 0.25 # albedo black daisies
+alpha_b = 0.15 # albedo black daisies
 gamma = 0.3 # death rate daisies per unit time
 p = 1 # proportion of the planets area which is fertile ground
-beta = 16 # Meridional heat transport (W m-2 K-1)
+beta = 3.8 # Meridional heat transport (W m-2 K-1)
 b = 2.2 # Net outgoing longwave radiation due to daisies (W m-2 K-1)
 I_0 = 220 # Cnstant outgoing radiation due to planet
 L = 1 # Percentage of the current solar luminosity
