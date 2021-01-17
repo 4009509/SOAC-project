@@ -30,12 +30,12 @@ plt.rc('figure', figsize = (12, 5))
 '''
 
 S_0 = 1366 # solar constant, W/m^2
-alpha_g = 0.5 # albedo ground
+alpha_g = 0.25 # albedo ground
 alpha_w = 0.75 # albedo white daisies
-alpha_b = 0.25 # albedo black daisies
+alpha_b = 0.15 # albedo black daisies
 gamma = 0.3 # death rate daisies per unit time
 p = 1 # proportion of the planets area which is fertile ground
-beta = 16 # Meridional heat transport (W m-2 K-1)
+beta = 6 # Meridional heat transport (W m-2 K-1)
 b = 2.2 # Net outgoing longwave radiation due to daisies (W m-2 K-1)
 I_0 = 220 # Constant outgoing radiation due to planet (W m-2)
 L = 1 # Percentage of the current solar luminosity
@@ -218,16 +218,16 @@ for idx, L in enumerate(luminosities):
 -------------------------------FIGURES-----------------------------------------
 '''
 
-# plt.figure()
-# ax = plt.gca()
-# ax.set_facecolor('darkgrey')
-# plt.plot(lats, T_transfer, label = "including meridional heat transfer")
-# plt.plot(lats, T_notransfer, label = "excluding meridional heat transfer")
-# plt.xlabel("latitude (deg)")
-# plt.ylabel("temperature (deg C)")
-# plt.grid(color = 'grey')
-# plt.legend()
-# plt.show()
+plt.figure()
+ax = plt.gca()
+ax.set_facecolor('darkgrey')
+plt.plot(lats, lat_temps, label = "including meridional heat transfer")
+#plt.plot(lats, T_notransfer, label = "excluding meridional heat transfer")
+plt.xlabel("latitude (deg)")
+plt.ylabel("temperature (deg C)")
+plt.grid(color = 'grey')
+plt.legend()
+plt.show()
 
 fig, (ax1, ax2) = plt.subplots(nrows=2, sharex=True)
 
