@@ -106,9 +106,9 @@ class Daisies:
     
     def land_fraction(self):
         if self.phi or self.phi == 0:
-            #label = "{0}:{1}".format(int(round_down(np.degrees(self.phi))),\
-            #                         int(round_down(np.degrees(self.phi)) + 10))
-            return p#land_frac[label]
+            label = "{0}:{1}".format(int(round_down(np.degrees(self.phi))),\
+                                     int(round_down(np.degrees(self.phi)) + 10))
+            return land_frac[label]
         else:
             return p
     
@@ -235,7 +235,7 @@ for idx, L in enumerate(luminosities):
         A_w_init = A_w_steady # start with steady state white daisies
         A_b_init = A_b_steady # start with steady state black daisies
 
-    Daisy = Daisies(A_w_init, A_b_init, L)
+    Daisy = Daisies(A_w_init, A_b_init, L, -80)
     [A_w_steady, A_b_steady] = Daisy.steady_state_sol(include_daisy = daisy_setting)
 
     area_white_steady[idx] = A_w_steady
@@ -256,7 +256,7 @@ A_b_steady_lat = np.zeros((len(latitudes),))
 
 for idx, lat in enumerate(latitudes):
     print("computing steady state solution for latitude #{0} out of {1}.".format(idx + 1, len(latitudes)))
-    [A_w_steady_lat[idx], A_b_steady_lat[idx]] = Daisies(0.5, 0.5, 1.5, lat).steady_state_sol(include_daisy = daisy_setting)
+    [A_w_steady_lat[idx], A_b_steady_lat[idx]] = Daisies(0.5, 0.5, 2, lat).steady_state_sol(include_daisy = daisy_setting)
 
 plt.figure()
 ax = plt.gca()
