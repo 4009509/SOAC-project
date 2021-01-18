@@ -51,7 +51,7 @@ land_frac = {"-90:-80" : 0.95, "-80:-70" : 0.7, "-70:-60" : 0.2, "-60:-50" : 0,
                   "-10:0" : 0.25, "0:10" : 0.25, "10:20" : 0.3, "20:30" : 0.35,
                   "30:40" : 0.45, "40:50" : 0.55, "50:60" : 0.6, "60:70" : 0.7,
                   "70:80" : 0.25, "80:90" : 0.1} # land fraction per latitude band as determined from []
-latitudes = np.arange(-90, 91, 1) # latitudes
+latitudes = np.arange(-90, 91, 10) # latitudes
 S_0 = 1366 # solar constant, W/m^2
 alpha_g = 0.5 # albedo ground
 alpha_w = 0.75 # albedo white daisies
@@ -106,9 +106,9 @@ class Daisies:
     
     def land_fraction(self):
         if self.phi or self.phi == 0:
-            label = "{0}:{1}".format(int(round_down(np.degrees(self.phi))),\
-                                     int(round_down(np.degrees(self.phi)) + 10))
-            return land_frac[label]
+            #label = "{0}:{1}".format(int(round_down(np.degrees(self.phi))),\
+            #                         int(round_down(np.degrees(self.phi)) + 10))
+            return p#land_frac[label]
         else:
             return p
     
@@ -200,8 +200,8 @@ class Daisies:
             self.A_b = 0.01
         return self.A_w, self.A_b
 
-T_notransf = [Daisies(0.02, 0.05, 1, lat).avg_T_lat()[0] for lat in latitudes]
-T_transf = [Daisies(0.02, 0.05, 1, lat).avg_T_lat()[1] for lat in latitudes]
+T_notransf = [Daisies(0.02, 0.05, L, lat).avg_T_lat()[0] for lat in latitudes]
+T_transf = [Daisies(0.02, 0.05, L, lat).avg_T_lat()[1] for lat in latitudes]
 
 #%%
 '''
@@ -235,7 +235,7 @@ for idx, L in enumerate(luminosities):
         A_w_init = A_w_steady # start with steady state white daisies
         A_b_init = A_b_steady # start with steady state black daisies
 
-    Daisy = Daisies(A_w_init, A_b_init, L, -80)
+    Daisy = Daisies(A_w_init, A_b_init, L)
     [A_w_steady, A_b_steady] = Daisy.steady_state_sol(include_daisy = daisy_setting)
 
     area_white_steady[idx] = A_w_steady
@@ -253,17 +253,31 @@ for idx, L in enumerate(luminosities):
 '''
 A_w_steady_lat = np.zeros((len(latitudes),))
 A_b_steady_lat = np.zeros((len(latitudes),))
+Temp_notrans = np.zeros((len(latitudes),))
+Temp_trans = np.zeros((len(latitudes),))
 
 for idx, lat in enumerate(latitudes):
     print("computing steady state solution for latitude #{0} out of {1}.".format(idx + 1, len(latitudes)))
     [A_w_steady_lat[idx], A_b_steady_lat[idx]] = Daisies(0.5, 0.5, 2, lat).steady_state_sol(include_daisy = daisy_setting)
-
+    [Temp_notrans[idx], Temp_trans[idx]] = Daisies(A_w_steady_lat[idx], A_b_steady_lat[idx], 2, lat).avg_T_lat()
+    
 plt.figure()
 ax = plt.gca()
 ax.set_facecolor('darkgrey')
 plt.plot(A_w_steady_lat, latitudes,color = 'white', label = 'Area white daisies (-)')
 plt.plot(A_b_steady_lat, latitudes, color = 'black', label = 'Area black daisies (-)')
 plt.xlabel("Area (-)")
+plt.ylabel("latitude (deg)")
+plt.title("Run for {0} daisies".format(daisy_setting))
+plt.legend()
+plt.grid(color = 'grey') 
+
+plt.figure()
+ax = plt.gca()
+ax.set_facecolor('darkgrey')
+plt.plot(Temp_notrans, latitudes, color = 'white', label = 'excluding meridional heat transfer')
+plt.plot(Temp_trans, latitudes, color = 'black', label = 'including meridional heat transfer')
+plt.xlabel("temperature (deg)")
 plt.ylabel("latitude (deg)")
 plt.title("Run for {0} daisies".format(daisy_setting))
 plt.legend()
