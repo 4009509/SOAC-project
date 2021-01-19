@@ -70,6 +70,7 @@ t_end = 10 # end time of simulation in seconds
 maxstep = 1000 # maximum nr of steps
 time = np.linspace(t_init, t_end, maxstep + 1) # time array
 dt = (t_end - t_init) / maxstep
+daisy_setting = "white & black"
 
 
 #%%
@@ -200,9 +201,6 @@ class Daisies:
             self.A_b = 0.01
         return self.A_w, self.A_b
 
-T_notransf = [Daisies(0.02, 0.05, L, lat).avg_T_lat()[0] for lat in latitudes]
-T_transf = [Daisies(0.02, 0.05, L, lat).avg_T_lat()[1] for lat in latitudes]
-
 #%%
 '''
 --------------------------VARYING LUMINOSITY-----------------------------------
@@ -221,8 +219,6 @@ growth_black = np.zeros((len(luminosities),))
 Temp_white_daisy = np.zeros((len(luminosities),))
 Temp_black_daisy = np.zeros((len(luminosities),))
 temperatures = np.zeros((len(luminosities),))
-
-daisy_setting = "white & black"
 
 for idx, L in enumerate(luminosities):
     print("computing steady state solution for luminosity #{0} out of {1}.".format(idx + 1, len(luminosities)))
@@ -258,8 +254,8 @@ Temp_trans = np.zeros((len(latitudes),))
 
 for idx, lat in enumerate(latitudes):
     print("computing steady state solution for latitude #{0} out of {1}.".format(idx + 1, len(latitudes)))
-    [A_w_steady_lat[idx], A_b_steady_lat[idx]] = Daisies(0.5, 0.5, 2, lat).steady_state_sol(include_daisy = daisy_setting)
-    [Temp_notrans[idx], Temp_trans[idx]] = Daisies(A_w_steady_lat[idx], A_b_steady_lat[idx], 2, lat).avg_T_lat()
+    [A_w_steady_lat[idx], A_b_steady_lat[idx]] = Daisies(0.5, 0.5, 1, lat).steady_state_sol(include_daisy = daisy_setting)
+    [Temp_notrans[idx], Temp_trans[idx]] = Daisies(A_w_steady_lat[idx], A_b_steady_lat[idx], 1, lat).avg_T_lat()
     
 plt.figure()
 ax = plt.gca()
@@ -287,17 +283,6 @@ plt.grid(color = 'grey')
 '''
 -------------------------------FIGURES-----------------------------------------
 '''
-
-plt.figure()
-ax = plt.gca()
-ax.set_facecolor('darkgrey')
-plt.plot(latitudes, T_transf, label = "including meridional heat transfer")
-plt.plot(latitudes, T_notransf, label = "excluding meridional heat transfer")
-plt.xlabel("latitude (deg)")
-plt.ylabel("temperature (deg C)")
-plt.grid(color = 'grey')
-plt.legend()
-plt.show()
 
 fig, (ax1, ax2) = plt.subplots(nrows=2, sharex=True)
 
