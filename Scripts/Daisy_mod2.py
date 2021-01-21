@@ -241,7 +241,7 @@ plt.xlabel("Area (-)")
 plt.ylabel("latitude (deg)")
 plt.title("Run for {0} daisies".format(daisy_setting))
 plt.legend()
-plt.grid(color = 'grey') 
+plt.grid(color = 'grey')  
 
 plt.figure()
 ax = plt.gca()

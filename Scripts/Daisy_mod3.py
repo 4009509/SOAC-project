@@ -100,7 +100,7 @@ class Daisies:
         label = str(int(round(np.degrees(self.phi))))
         return max(land_frac[label] - self.A_w  - self.A_b, 0)
     
-    def A_o(self):
+    def A_o(self): 
         label = str(int(round(np.degrees(self.phi))))
         return 1 - land_frac[label]
         

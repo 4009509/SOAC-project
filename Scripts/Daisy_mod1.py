@@ -108,7 +108,7 @@ class Daisies:
 '''
 
 t_init = 0 # initial time
-t_end = 10 # end time of simulation in seconds
+t_end = 10 # end time of simulation in seconds 
 maxstep = 1000 # maximum nr of steps
 time = np.linspace(t_init, t_end, maxstep + 1) # time array
 dt = (t_end - t_init) / maxstep
