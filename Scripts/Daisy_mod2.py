@@ -3,7 +3,7 @@
 """
 Created on Thu Dec 10 18:16:01 2020
 
-@author: T Y van der Duim
+@author: T Y van der Duim 
 """
 
 '''
@@ -28,7 +28,7 @@ plt.rc('figure', figsize = (12, 5))
 '''
 -------------------------------PARAMS------------------------------------------
 '''
-
+latitudes = np.arange(-90, 91, 10) # latitudes
 S_0 = 1366 # solar constant, W/m^2
 alpha_g = 0.5 # albedo ground
 alpha_w = 0.75 # albedo white daisies
@@ -42,6 +42,12 @@ L = 1 # Percentage of the current solar luminosity
 T_opt = 22.5 # optimum temperature daisies
 T_min = 5 # mimimum temperature daisies
 T_max = 40 # maximum temperature daisies
+t_init = 0 # initial time
+t_end = 2 # end time of simulation in seconds
+maxstep = 1000 # maximum nr of steps
+time = np.linspace(t_init, t_end, maxstep + 1) # time array
+dt = (t_end - t_init) / maxstep
+
 
 #%%
 '''
@@ -50,20 +56,53 @@ T_max = 40 # maximum temperature daisies
 
 class Daisies:
     
-    def __init__(self, A_w, A_b, L):
+    def __init__(self, A_w, A_b, L, *args): # optionally add a specific latitude
         self.A_w = A_w
         self.A_b = A_b
         self.L = L
+        self.phi = args
+        if self.phi:
+            self.phi = np.radians(args)[0]
+
+    '''
+    ---------------------------------GLOBAL------------------------------------
+    '''
         
     def A_g(self):
-        return p - self.A_w  - self.A_b
+        return max(p - self.A_w  - self.A_b, 0)
         
     def alpha_p(self):
         return alpha_g * self.A_g() + alpha_w * self.A_w + alpha_b * self.A_b
             
     def avg_T_g(self):
         return (S_0 / 4 * self.L * (1 - self.alpha_p()) - I_0) / b
-            
+    
+    '''
+    ---------------------LATITUDE DEPENDENCE (LOCAL)---------------------------
+    '''
+    
+    def sol_irradiance(self):
+        d_m = 1.495978770e9 # distance Sun-Earth
+        d = d_m # assume dm / d to be 1 (perfect circle)
+        delta = 0 # Sun inclination assumed to be zero
+        delta_H = np.arccos(-np.tan(self.phi) * np.tan(delta)) # daylength
+        return S_0 / m.pi * (d_m / d)**2  * (delta_H * np.sin(self.phi) * np.sin(delta) + \
+                                              np.cos(self.phi) * np.cos(delta) * np.sin(delta_H))
+    
+    def avg_T_lat(self):
+        if abs(self.phi) >= np.radians(0) and abs(self.phi) < np.radians(60):
+            alpha_g = 0.32
+        elif abs(self.phi) >= np.radians(60) and abs(self.phi) < np.radians(80):
+            alpha_g = 0.50
+        else:
+            alpha_g = 0.62
+        return (self.sol_irradiance() * self.L * (1 - self.alpha_p()) - I_0) / b, \
+            (self.sol_irradiance() * self.L * (1 - self.alpha_p()) - I_0 + beta * self.avg_T_g()) / (b + beta)
+    
+    '''
+    ---------------------------DAISY DYNAMICS----------------------------------
+    '''
+    
     def T_daisy(self, daisytype):
         if daisytype == "black":
             alpha_i = alpha_b
@@ -72,7 +111,10 @@ class Daisies:
         else:
             print("daisy type not recognized")
             alpha_i = np.nan
-        return 0.25 * S_0 * self.L * (self.alpha_p() - alpha_i) / (b + beta) + self.avg_T_g()
+        if self.phi or self.phi == 0:
+            return self.sol_irradiance() * self.L * (self.alpha_p() - alpha_i) / (b + beta) + self.avg_T_lat()[1]
+        else:
+            return 0.25 * S_0 * self.L * (self.alpha_p() - alpha_i) / (b + beta) + self.avg_T_g()
     
     def growth_rate(self, daisytype):
         return max(1 - 4 * (T_opt - self.T_daisy(daisytype))**2 / (T_max - T_min)**2, 0)
@@ -102,20 +144,43 @@ class Daisies:
                          "white & black" : (Y_1 + 2 * Y_2 + Y_3 - Y_4) / 3}
         return white_daisies[include_daisy], black_daisies[include_daisy]
 
+    def steady_state_sol(self, include_daisy):
+        A_w = np.zeros((len(time),)) # area white daisies
+        A_b = np.zeros((len(time),)) # area black daisies
+
+        # initial conditions
+        it = 0
+        A_w[it] = self.A_w
+        A_b[it] = self.A_b
+        # solve Runge-Kutta scheme
+        for it in range(len(time) - 1):
+            self.A_w = A_w[it]
+            self.A_b = A_b[it]
+            A_w[it + 1] = self.RK4(include_daisy)[0]
+            A_b[it + 1] = self.RK4(include_daisy)[1]
+            if A_w[it + 1] < 0:
+                A_w[it + 1] = 0
+            if A_b[it + 1] < 0:
+                A_b[it + 1] = 0
+        self.A_w, self.A_b = A_w[-1], A_b[-1]
+        if self.A_w < 1e-3:
+            self.A_w = 0.01
+        if self.A_b < 1e-3:
+            self.A_b = 0.01
+        return self.A_w, self.A_b
+
+T_notransf = [Daisies(0.02, 0.05, L, lat).avg_T_lat()[0] for lat in latitudes]
+T_transf = [Daisies(0.02, 0.05, L, lat).avg_T_lat()[1] for lat in latitudes]
+
 #%%
 '''
---------------------------TIME INTEGRATION-------------------------------------
+--------------------------VARYING LUMINOSITY-----------------------------------
 '''
 
-t_init = 0 # initial time
-t_end = 10 # end time of simulation in seconds
-maxstep = 1000 # maximum nr of steps
-time = np.linspace(t_init, t_end, maxstep + 1) # time array
-dt = (t_end - t_init) / maxstep
-
-luminosities = np.concatenate([np.arange(0.6, 3, 0.05), np.arange(2.95, 0.5, -0.05)])
-A_w_steady = 0.01
-A_b_steady = 0.01
+luminosities = np.concatenate([np.arange(0.6, 3, 0.1), np.arange(2.9, 0.5, -0.1)])
+A_w_steady = 0.5
+A_b_steady = 0.5
+chosen_lat = 0
 
 area_white_steady = np.zeros((len(luminosities),))
 area_black_steady = np.zeros((len(luminosities),))
@@ -130,33 +195,18 @@ daisy_setting = "white & black"
 
 for idx, L in enumerate(luminosities):
     print("computing steady state solution for luminosity #{0} out of {1}.".format(idx + 1, len(luminosities)))
-    A_w = np.zeros((len(time),)) # area white daisies
-    A_b = np.zeros((len(time),)) # area black daisies
 
     # initial conditions
-    it = 0
     if idx == 0:
-        A_w[it] = 0.5 # start with half of the available area white daisies
-        A_b[it] = 0.5 # start with half of the available area black daisies
+        A_w_init = 0.5 # start with half of the available area white daisies
+        A_b_init = 0.5 # start with half of the available area black daisies
     else:
-        A_w[it] = A_w_steady # start with steady state white daisies
-        A_b[it] = A_b_steady # start with steady state black daisies
+        A_w_init = A_w_steady # start with steady state white daisies
+        A_b_init = A_b_steady # start with steady state black daisies
 
-    # solve Runge-Kutta scheme
-    for it in range(len(time) - 1):
-        X_0 = A_w[it]
-        Y_0 = A_b[it]
-        Daisy = Daisies(X_0, Y_0, L)
-        A_w[it + 1] = Daisy.RK4(include_daisy = daisy_setting)[0]
-        A_b[it + 1] = Daisy.RK4(include_daisy = daisy_setting)[1]
-        if A_w[it + 1] < 0:
-            A_w[it + 1] = 0
-        if A_b[it + 1] < 0:
-            A_b[it + 1] = 0
-        
-    # save solutions
-    A_w_steady = A_w[-1]
-    A_b_steady = A_b[-1]
+    Daisy = Daisies(A_w_init, A_b_init, L)
+    [A_w_steady, A_b_steady] = Daisy.steady_state_sol(include_daisy = daisy_setting)
+
     area_white_steady[idx] = A_w_steady
     area_black_steady[idx] = A_b_steady
     area_total[idx] = A_w_steady + A_b_steady
@@ -165,16 +215,68 @@ for idx, L in enumerate(luminosities):
     Temp_white_daisy[idx] = Daisies(A_w_steady, A_b_steady, L).T_daisy(daisytype = "white")
     Temp_black_daisy[idx] = Daisies(A_w_steady, A_b_steady, L).T_daisy(daisytype = "black")
     temperatures[idx] = Daisies(A_w_steady, A_b_steady, L).avg_T_g()
-    if A_w_steady < 1e-3:
-        A_w_steady = 0.01
-    if A_b_steady < 1e-3:
-        A_b_steady = 0.01
 
+plt.figure()
+plt.plot(temperatures, growth_black)
+#%%
+'''
+--------------------------VARYING LATITUDE-----------------------------------
+'''
+A_w_steady_lat = np.zeros((len(latitudes),))
+A_b_steady_lat = np.zeros((len(latitudes),))
+Temp_notrans = np.zeros((len(latitudes),))
+Temp_nodaisiestrans = np.zeros((len(latitudes),))
+Temp_nodaisiesnotrans = np.zeros((len(latitudes),))
+Temp_trans = np.zeros((len(latitudes),))
+
+lum = 1.5
+
+for idx, lat in enumerate(latitudes):
+    print("computing steady state solution for latitude #{0} out of {1}.".format(idx + 1, len(latitudes)))
+    [A_w_steady_lat[idx], A_b_steady_lat[idx]] = Daisies(0.1, 0.1, lum, lat).steady_state_sol(include_daisy = daisy_setting)
+    [Temp_notrans[idx], Temp_trans[idx]] = Daisies(A_w_steady_lat[idx], A_b_steady_lat[idx], lum, lat).avg_T_lat()
+    [Temp_nodaisiesnotrans[idx], Temp_nodaisiestrans[idx]] = Daisies(0, 0, lum, lat).avg_T_lat()
+
+plt.figure()
+ax = plt.gca()
+ax.set_facecolor('darkgrey')
+plt.plot(A_w_steady_lat, latitudes,color = 'white', label = 'Area white daisies (-)')
+plt.plot(A_b_steady_lat, latitudes, color = 'black', label = 'Area black daisies (-)')
+plt.xlabel("Area (-)")
+plt.ylabel("latitude (deg)")
+plt.title("Run for {0} daisies".format(daisy_setting))
+plt.legend()
+plt.grid(color = 'grey') 
+
+plt.figure()
+ax = plt.gca()
+ax.set_facecolor('darkgrey')
+#plt.plot(Temp_notrans, latitudes, color = 'white', label = 'excluding meridional heat transfer')
+plt.plot(Temp_trans, latitudes, color = 'black', label = 'including meridional heat transfer')
+plt.plot(Temp_nodaisiestrans, latitudes, color = 'blue', label = 'including meridional heat transfer, but no daisies')
+#plt.plot(Temp_nodaisiesnotrans, latitudes, color = 'red', label = 'excluding meridional heat transfer, but no daisies')
+
+plt.xlabel("temperature (deg)")
+plt.ylabel("latitude (deg)")
+plt.title("Run for {0} daisies".format(daisy_setting))
+plt.legend()
+plt.grid(color = 'grey') 
 
 #%%
 '''
 -------------------------------FIGURES-----------------------------------------
 '''
+
+plt.figure()
+ax = plt.gca()
+ax.set_facecolor('darkgrey')
+plt.plot(latitudes, T_transf, label = "including meridional heat transfer")
+plt.plot(latitudes, T_notransf, label = "excluding meridional heat transfer")
+plt.xlabel("latitude (deg)")
+plt.ylabel("temperature (deg C)")
+plt.grid(color = 'grey')
+plt.legend()
+plt.show()
 
 fig, (ax1, ax2) = plt.subplots(nrows=2, sharex=True)
 
@@ -218,11 +320,8 @@ plt.plot(luminosities[:int(len(luminosities) / 2)], growth_black[:int(len(lumino
          color = 'black', label = 'Growth rate black daisies (increasing L)')
 plt.plot(luminosities[int(len(luminosities) / 2):], growth_black[int(len(luminosities) / 2):],\
         color = 'black', linestyle = 'dashed', label = 'Growth rate black daisies (decreasing L)')
-#plt.plot(Temp_white_daisy, growth_white, color = 'white', label = 'Growth rate white daisies')
-#plt.plot(Temp_black_daisy, growth_black, color = 'black', label = 'Death rate black daisies')
 plt.axhline(gamma, label = "Death rate")
-plt.xlabel("Daisy temperature (deg C)")
-#plt.ylim([-2, 2])
+plt.xlabel("Solar luminosity")
 plt.ylabel("Growth/death rate (-)")
 plt.title("Run for {0} daisies, adjusting initial conditions".format(daisy_setting))
 plt.legend()
