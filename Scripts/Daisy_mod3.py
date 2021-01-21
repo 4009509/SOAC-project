@@ -26,16 +26,43 @@ plt.rc('font', size=15)
 plt.rc('figure', figsize = (12, 5))
 
 '''
+-----------------------------basis functions-----------------------------------
+'''
+def round_down(lat): # function used to round latitude down to nearest ten
+    if lat == 90:
+        return 80
+    else:
+        return(m.floor(lat / 10) * 10)
+
+def global_landf():
+    R = 6.371e6 # radius Earth (m)
+    labels = ["{0}:{1}".format(int(round_down(lat)), int(round_down(lat) + 10))
+                     for lat in latitudes]
+    circums = [2 * m.pi * R * np.cos(np.radians(lat)) for lat in latitudes]
+    weighted_landfrac = [land_frac[label] * circum for label, circum in zip(labels,circums)]
+    return sum(weighted_landfrac) / sum(circums)
+
+'''
 -------------------------------PARAMS------------------------------------------
 '''
-latitudes = np.arange(-90, 91, 10) # latitudes
+
+land_frac = {"-90" : 1, "-85" : 1, "-80" : 0.85, "-75" : 0.7, "-70" : 0.45, "-65" : 0.1,
+             "-60" : 0, "-55" : 0, "-50" : 0.05, "-45" : 0.05, "-40" : 0.05, "-35" : 0.1,
+             "-30" : 0.2, "-25" : 0.25, "-20" : 0.25, "-15" : 0.2, "-10" : 0.2, "-5" : 0.25,
+             "0" : 0.2, "5" : 0.2, "10" : 0.25, "15" : 0.25, "20" : 0.3, "25" : 0.35,
+             "30" : 0.4,  "35" : 0.4, "40" : 0.4, "45" : 0.5, "50" : 0.55, "55" : 0.55,
+             "60" : 0.6, "65" : 0.8, "70" : 0.6, "75" : 0.25, "80" : 0.15, "85" : 0.05,
+             "90" : 0} # land fraction per latitude band as determined from []
+
+latitudes = np.arange(-90, 91, 5) # latitudes
 S_0 = 1366 # solar constant, W/m^2
-alpha_g = 0.5 # albedo ground
+alpha_g = 0.335 # albedo ground
+alpha_o = 0.28 # albedo ocean
 alpha_w = 0.75 # albedo white daisies
 alpha_b = 0.25 # albedo black daisies
 gamma = 0.3 # death rate daisies per unit time
-p = 1 # proportion of the planets area which is fertile ground
-beta = 16 # Meridional heat transport (W m-2 K-1)
+p = 1#global_landf() # proportion of the planets area which is fertile ground
+beta = 6 # Meridional heat transport (W m-2 K-1)
 b = 2.2 # Net outgoing longwave radiation due to daisies (W m-2 K-1)
 I_0 = 220 # Constant outgoing radiation due to planet (W m-2)
 L = 1 # Percentage of the current solar luminosity
@@ -44,9 +71,10 @@ T_min = 5 # mimimum temperature daisies
 T_max = 40 # maximum temperature daisies
 t_init = 0 # initial time
 t_end = 10 # end time of simulation in seconds
-maxstep = 1000 # maximum nr of steps
+maxstep = 100 # maximum nr of steps
 time = np.linspace(t_init, t_end, maxstep + 1) # time array
 dt = (t_end - t_init) / maxstep
+daisy_setting = "white & black"
 
 
 #%%
@@ -69,10 +97,15 @@ class Daisies:
     '''
         
     def A_g(self):
-        return max(p - self.A_w  - self.A_b, 0)
+        label = str(int(round(np.degrees(self.phi))))
+        return max(land_frac[label] - self.A_w  - self.A_b, 0)
+    
+    def A_o(self):
+        label = str(int(round(np.degrees(self.phi))))
+        return 1 - land_frac[label]
         
     def alpha_p(self):
-        return alpha_g * self.A_g() + alpha_w * self.A_w + alpha_b * self.A_b
+        return alpha_g * self.A_g() + alpha_w * self.A_w + alpha_b * self.A_b + alpha_o * self.A_o()
             
     def avg_T_g(self):
         return (S_0 / 4 * self.L * (1 - self.alpha_p()) - I_0) / b
@@ -188,30 +221,28 @@ Temp_white_daisy = np.zeros((len(luminosities),))
 Temp_black_daisy = np.zeros((len(luminosities),))
 temperatures = np.zeros((len(luminosities),))
 
-daisy_setting = "white & black"
-
 for idx, L in enumerate(luminosities):
     print("computing steady state solution for luminosity #{0} out of {1}.".format(idx + 1, len(luminosities)))
 
     # initial conditions
     if idx == 0:
-        A_w_init = 0.01 # start with half of the available area white daisies
-        A_b_init = 0.01 # start with half of the available area black daisies
+        A_w_init = 0.5 # start with half of the available area white daisies
+        A_b_init = 0.5 # start with half of the available area black daisies
     else:
         A_w_init = A_w_steady # start with steady state white daisies
         A_b_init = A_b_steady # start with steady state black daisies
 
-    Daisy = Daisies(A_w_init, A_b_init, L)
+    Daisy = Daisies(A_w_init, A_b_init, L, chosen_lat)
     [A_w_steady, A_b_steady] = Daisy.steady_state_sol(include_daisy = daisy_setting)
 
     area_white_steady[idx] = A_w_steady
     area_black_steady[idx] = A_b_steady
     area_total[idx] = A_w_steady + A_b_steady
-    growth_white[idx] = Daisies(A_w_steady, A_b_steady, L).growth_rate(daisytype = "white")
-    growth_black[idx] = Daisies(A_w_steady, A_b_steady, L).growth_rate(daisytype = "black")
-    Temp_white_daisy[idx] = Daisies(A_w_steady, A_b_steady, L).T_daisy(daisytype = "white")
-    Temp_black_daisy[idx] = Daisies(A_w_steady, A_b_steady, L).T_daisy(daisytype = "black")
-    temperatures[idx] = Daisies(A_w_steady, A_b_steady, L).avg_T_g()
+    growth_white[idx] = Daisies(A_w_steady, A_b_steady, L, chosen_lat).growth_rate(daisytype = "white")
+    growth_black[idx] = Daisies(A_w_steady, A_b_steady, L, chosen_lat).growth_rate(daisytype = "black")
+    Temp_white_daisy[idx] = Daisies(A_w_steady, A_b_steady, L, chosen_lat).T_daisy(daisytype = "white")
+    Temp_black_daisy[idx] = Daisies(A_w_steady, A_b_steady, L, chosen_lat).T_daisy(daisytype = "black")
+    temperatures[idx] = Daisies(A_w_steady, A_b_steady, L, chosen_lat).avg_T_g()
 
 #%%
 '''
@@ -219,29 +250,33 @@ for idx, L in enumerate(luminosities):
 '''
 A_w_steady_lat = np.zeros((len(latitudes),))
 A_b_steady_lat = np.zeros((len(latitudes),))
+A_g_steady_lat = np.zeros((len(latitudes),))
 Temp_notrans = np.zeros((len(latitudes),))
 Temp_nodaisiestrans = np.zeros((len(latitudes),))
 Temp_nodaisiesnotrans = np.zeros((len(latitudes),))
 Temp_trans = np.zeros((len(latitudes),))
 
-lum = 1.3
-
 for idx, lat in enumerate(latitudes):
     print("computing steady state solution for latitude #{0} out of {1}.".format(idx + 1, len(latitudes)))
-    [A_w_steady_lat[idx], A_b_steady_lat[idx]] = Daisies(0.01, 0.01, lum, lat).steady_state_sol(include_daisy = daisy_setting)
-    [Temp_notrans[idx], Temp_trans[idx]] = Daisies(A_w_steady_lat[idx], A_b_steady_lat[idx], lum, lat).avg_T_lat()
-    [Temp_nodaisiesnotrans[idx], Temp_nodaisiestrans[idx]] = Daisies(0, 0, lum, lat).avg_T_lat()
-
+    A_w_init = land_frac[str(int(round(lat)))] / 30
+    A_b_init = land_frac[str(int(round(lat)))] / 30
+    [A_w_steady_lat[idx], A_b_steady_lat[idx]] = Daisies(A_w_init, A_b_init, 1.6, lat).steady_state_sol(include_daisy = daisy_setting)
+    Daisy_sol = Daisies(A_w_steady_lat[idx], A_b_steady_lat[idx], 1.6, lat)
+    [Temp_notrans[idx], Temp_trans[idx]] = Daisy_sol.avg_T_lat()
+    [Temp_nodaisiesnotrans[idx], Temp_nodaisiestrans[idx]] = Daisies(0, 0, 1.6, lat).avg_T_lat()
+    A_g_steady_lat[idx] = Daisy_sol.A_g()
+    
 plt.figure()
 ax = plt.gca()
 ax.set_facecolor('darkgrey')
 plt.plot(A_w_steady_lat, latitudes,color = 'white', label = 'Area white daisies (-)')
 plt.plot(A_b_steady_lat, latitudes, color = 'black', label = 'Area black daisies (-)')
+#plt.plot(A_w_steady_lat + A_b_steady_lat, latitudes, color = 'black', label = 'Area total (-)')
 plt.xlabel("Area (-)")
 plt.ylabel("latitude (deg)")
 plt.title("Run for {0} daisies".format(daisy_setting))
 plt.legend()
-plt.grid(color = 'grey') 
+plt.grid(color = 'grey')
 
 plt.figure()
 ax = plt.gca()
@@ -249,13 +284,29 @@ ax.set_facecolor('darkgrey')
 #plt.plot(Temp_notrans, latitudes, color = 'white', label = 'excluding meridional heat transfer')
 plt.plot(Temp_trans, latitudes, color = 'black', label = 'including meridional heat transfer')
 plt.plot(Temp_nodaisiestrans, latitudes, color = 'blue', label = 'including meridional heat transfer, but no daisies')
-#plt.plot(Temp_nodaisiesnotrans, latitudes, color = 'red', label = 'excluding meridional heat transfer, but no daisies')
-
 plt.xlabel("temperature (deg)")
 plt.ylabel("latitude (deg)")
 plt.title("Run for {0} daisies".format(daisy_setting))
 plt.legend()
-plt.grid(color = 'grey') 
+plt.grid(color = 'grey')
+
+
+fig, ax = plt.subplots()
+ax.stackplot(latitudes, A_w_steady_lat, A_b_steady_lat, A_g_steady_lat,
+              colors = ['grey', 'black', 'orange'], labels = 
+              ['Area white daisies', 'Area black daisies', 'Area fertile ground'],
+              alpha=0.4)
+ax.plot(latitudes, list(land_frac.values()),
+         label = 'land area available')
+ax.plot(np.nan, '-r', label = "Temperature (deg)")
+ax.set_xlabel("Latitude (deg)")
+ax.set_ylabel("Area (-)")
+ax2=ax.twinx()
+ax2.plot(latitudes, Temp_trans, color = 'red', label = "Temperature")
+ax2.set_ylabel("Temperature (deg)")
+ax.legend(loc=0)
+ax.grid(color = 'grey')
+ax2.grid(False)
 
 #%%
 '''
