@@ -13,6 +13,8 @@ Created on Thu Dec 10 18:16:01 2020
 import numpy as np
 import matplotlib.pyplot as plt
 import math as m
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
 
 '''
 ---------------------------plotting preferences--------------------------------
@@ -46,13 +48,29 @@ def global_landf():
 -------------------------------PARAMS------------------------------------------
 '''
 
-land_frac = {"-90" : 1, "-85" : 1, "-80" : 0.85, "-75" : 0.7, "-70" : 0.45, "-65" : 0.1,
-             "-60" : 0, "-55" : 0, "-50" : 0.05, "-45" : 0.05, "-40" : 0.05, "-35" : 0.1,
-             "-30" : 0.2, "-25" : 0.25, "-20" : 0.25, "-15" : 0.2, "-10" : 0.2, "-5" : 0.25,
-             "0" : 0.2, "5" : 0.2, "10" : 0.25, "15" : 0.25, "20" : 0.3, "25" : 0.35,
-             "30" : 0.4,  "35" : 0.4, "40" : 0.4, "45" : 0.5, "50" : 0.55, "55" : 0.55,
-             "60" : 0.6, "65" : 0.8, "70" : 0.6, "75" : 0.25, "80" : 0.15, "85" : 0.05,
-             "90" : 0} # land fraction per latitude band as determined from []
+# land_frac = {"-90" : 1, "-85" : 1, "-80" : 0.85, "-75" : 0.7, "-70" : 0.45, "-65" : 0.1,
+#              "-60" : 0, "-55" : 0, "-50" : 0.05, "-45" : 0.05, "-40" : 0.05, "-35" : 0.1,
+#              "-30" : 0.2, "-25" : 0.25, "-20" : 0.25, "-15" : 0.2, "-10" : 0.2, "-5" : 0.25,
+#              "0" : 0.2, "5" : 0.2, "10" : 0.25, "15" : 0.25, "20" : 0.3, "25" : 0.35,
+#              "30" : 0.4,  "35" : 0.4, "40" : 0.4, "45" : 0.5, "50" : 0.55, "55" : 0.55,
+#              "60" : 0.6, "65" : 0.8, "70" : 0.6, "75" : 0.25, "80" : 0.15, "85" : 0.05,
+#              "90" : 0} # land fraction per latitude band as determined from []
+
+land_frac = {"-90" : 1, "-85" : 1, "-80" : 1, "-75" : 1, "-70" : 1, "-65" : 1,
+             "-60" : 1, "-55" : 1, "-50" : 1, "-45" : 1, "-40" : 1, "-35" : 1,
+             "-30" : 1, "-25" : 1, "-20" : 1, "-15" : 1, "-10" : 1, "-5" : 1,
+             "0" : 1, "5" : 1, "10" : 1, "15" : 1, "20" : 1, "25" : 1,
+             "30" : 1,  "35" : 1, "40" : 1, "45" : 1, "50" : 1, "55" : 1,
+             "60" : 1, "65" : 1, "70" : 1, "75" : 1, "80" : 1, "85" : 1,
+             "90" : 1} # land fraction per latitude band as determined from []
+
+#land_frac = {"-90" : 0.5, "-85" : 0.5, "-80" : 0.5, "-75" : 0.5, "-70" : 0.5, "-65" : 0.5,
+#             "-60" : 0.5, "-55" : 0.5, "-50" : 0.5, "-45" : 0.5, "-40" : 0.5, "-35" : 0.5,
+#             "-30" : 0.5, "-25" : 0.5, "-20" : 0.5, "-15" : 0.5, "-10" : 0.5, "-5" : 0.5,
+#             "0" : 0.5, "5" : 0.5, "10" : 0.5, "15" : 0.5, "20" : 0.5, "25" : 0.5,
+#             "30" : 0.5,  "35" : 0.5, "40" : 0.5, "45" : 0.5, "50" : 0.5, "55" : 0.5,
+#             "60" : 0.5, "65" : 0.5, "70" : 0.5, "75" : 0.5, "80" : 0.5, "85" : 0.5,
+#             "90" : 0.5} # land fraction per latitude band as determined from []
 
 latitudes = np.arange(-90, 91, 5) # latitudes
 S_0 = 1366 # solar constant, W/m^2
@@ -207,43 +225,48 @@ class Daisies:
 --------------------------VARYING LUMINOSITY-----------------------------------
 '''
 
-luminosities = np.concatenate([np.arange(0.6, 3, 0.1), np.arange(2.9, 0.5, -0.1)])
-A_w_steady = 0.5
-A_b_steady = 0.5
+#luminosities = np.concatenate([np.arange(0.9, 2, 0.1), np.arange(1.9, 0.8, -0.1)])
+luminosities = np.arange(0.9, 2, 0.1)
+
 chosen_lat = 0
 
-area_white_steady = np.zeros((len(luminosities),))
-area_black_steady = np.zeros((len(luminosities),))
-area_total = np.zeros((len(luminosities),))
-growth_white = np.zeros((len(luminosities),))
-growth_black = np.zeros((len(luminosities),))
-Temp_white_daisy = np.zeros((len(luminosities),))
-Temp_black_daisy = np.zeros((len(luminosities),))
-temperatures = np.zeros((len(luminosities),))
+A_w_steady_lat = np.zeros((len(luminosities), len(latitudes)))
+A_b_steady_lat = np.zeros((len(luminosities), len(latitudes)))
+A_g_steady_lat = np.zeros((len(luminosities), len(latitudes)))
+Temp_notrans = np.zeros((len(luminosities), len(latitudes)))
+Temp_nodaisiestrans = np.zeros((len(luminosities), len(latitudes)))
+Temp_nodaisiesnotrans = np.zeros((len(luminosities), len(latitudes)))
+Temp_trans = np.zeros((len(luminosities), len(latitudes)))
+growth_white = np.zeros((len(luminosities), len(latitudes)))
+growth_black = np.zeros((len(luminosities), len(latitudes)))
 
 for idx, L in enumerate(luminosities):
     print("computing steady state solution for luminosity #{0} out of {1}.".format(idx + 1, len(luminosities)))
+    for idy, lat in enumerate(latitudes):
+        print("computing steady state solution for latitude #{0} out of {1}.".format(idy + 1, len(latitudes)))
+        
+        if idx == 0:
+            A_w_init = land_frac[str(int(round(lat)))] / 2 # start with half of the available area white daisies
+            A_b_init = land_frac[str(int(round(lat)))] / 2 # start with half of the available area black daisies
+        else:
+            A_w_init = A_w_steady_lat[idx - 1, idy] # start with steady state white daisies
+            A_b_init = A_b_steady_lat[idx - 1, idy] # start with steady state black daisies
+            
+        [A_w_steady_lat[idx, idy], A_b_steady_lat[idx, idy]] = Daisies(A_w_init, A_b_init, L, lat).steady_state_sol(include_daisy = daisy_setting)
+        # steady state sols
+        Daisy_steady = Daisies(A_w_steady_lat[idx, idy], A_b_steady_lat[idx, idy], L, lat)
+        [Temp_notrans[idx, idy], Temp_trans[idx, idy]] = Daisy_steady.avg_T_lat()
+        [growth_white[idx, idy], growth_black[idx, idy]] = Daisy_steady.growth_rate(daisytype = "white"), Daisy_steady.growth_rate(daisytype = "black")
+        A_g_steady_lat[idx, idy] = Daisy_steady.A_g()
+        # temperature without daisies
+        [Temp_nodaisiesnotrans[idx, idy], Temp_nodaisiestrans[idx, idy]] = Daisies(0, 0, L, lat).avg_T_lat()
 
-    # initial conditions
-    if idx == 0:
-        A_w_init = 0.5 # start with half of the available area white daisies
-        A_b_init = 0.5 # start with half of the available area black daisies
-    else:
-        A_w_init = A_w_steady # start with steady state white daisies
-        A_b_init = A_b_steady # start with steady state black daisies
-
-    Daisy = Daisies(A_w_init, A_b_init, L, chosen_lat)
-    [A_w_steady, A_b_steady] = Daisy.steady_state_sol(include_daisy = daisy_setting)
-
-    area_white_steady[idx] = A_w_steady
-    area_black_steady[idx] = A_b_steady
-    area_total[idx] = A_w_steady + A_b_steady
-    growth_white[idx] = Daisies(A_w_steady, A_b_steady, L, chosen_lat).growth_rate(daisytype = "white")
-    growth_black[idx] = Daisies(A_w_steady, A_b_steady, L, chosen_lat).growth_rate(daisytype = "black")
-    Temp_white_daisy[idx] = Daisies(A_w_steady, A_b_steady, L, chosen_lat).T_daisy(daisytype = "white")
-    Temp_black_daisy[idx] = Daisies(A_w_steady, A_b_steady, L, chosen_lat).T_daisy(daisytype = "black")
-    temperatures[idx] = Daisies(A_w_steady, A_b_steady, L, chosen_lat).avg_T_g()
-
+fig = plt.figure()
+ax = Axes3D(fig)
+X, Y = np.meshgrid(latitudes, luminosities)
+surf = ax.plot_surface(X, Y, Temp_nodaisiestrans, cmap=cm.jet, linewidth=0.1)
+fig.colorbar(surf, shrink=0.5, aspect=5)
+plt.show()
 #%%
 '''
 --------------------------VARYING LATITUDE-----------------------------------
@@ -256,14 +279,16 @@ Temp_nodaisiestrans = np.zeros((len(latitudes),))
 Temp_nodaisiesnotrans = np.zeros((len(latitudes),))
 Temp_trans = np.zeros((len(latitudes),))
 
+lum = 1.2
+
 for idx, lat in enumerate(latitudes):
     print("computing steady state solution for latitude #{0} out of {1}.".format(idx + 1, len(latitudes)))
-    A_w_init = land_frac[str(int(round(lat)))] / 30
-    A_b_init = land_frac[str(int(round(lat)))] / 30
-    [A_w_steady_lat[idx], A_b_steady_lat[idx]] = Daisies(A_w_init, A_b_init, 1.6, lat).steady_state_sol(include_daisy = daisy_setting)
-    Daisy_sol = Daisies(A_w_steady_lat[idx], A_b_steady_lat[idx], 1.6, lat)
+    A_w_init = 0.5#land_frac[str(int(round(lat)))] / 2
+    A_b_init = 0.5#land_frac[str(int(round(lat)))] / 2
+    [A_w_steady_lat[idx], A_b_steady_lat[idx]] = Daisies(A_w_init, A_b_init, lum, lat).steady_state_sol(include_daisy = daisy_setting)
+    Daisy_sol = Daisies(A_w_steady_lat[idx], A_b_steady_lat[idx], lum, lat)
     [Temp_notrans[idx], Temp_trans[idx]] = Daisy_sol.avg_T_lat()
-    [Temp_nodaisiesnotrans[idx], Temp_nodaisiestrans[idx]] = Daisies(0, 0, 1.6, lat).avg_T_lat()
+    [Temp_nodaisiesnotrans[idx], Temp_nodaisiestrans[idx]] = Daisies(0, 0, lum, lat).avg_T_lat()
     A_g_steady_lat[idx] = Daisy_sol.A_g()
     
 plt.figure()
