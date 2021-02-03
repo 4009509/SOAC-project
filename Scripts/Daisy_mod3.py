@@ -15,6 +15,11 @@ import matplotlib.pyplot as plt
 import math as m
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
+from random import randint, choice
+from matplotlib import gridspec
+import os
+os.environ['PROJ_LIB'] = r"C:\Users\fafri\anaconda3\pkgs\proj4-6.1.1-hc2d0af5_1\Library\share"
+from mpl_toolkits.basemap import Basemap
 
 '''
 ---------------------------plotting preferences--------------------------------
@@ -22,9 +27,9 @@ from matplotlib import cm
 plt.style.use('seaborn-darkgrid')
 plt.rc('text', usetex=False)
 plt.rc('font', family='times')
-plt.rc('xtick', labelsize=15) 
-plt.rc('ytick', labelsize=15) 
-plt.rc('font', size=15) 
+plt.rc('xtick', labelsize=20) 
+plt.rc('ytick', labelsize=20) 
+plt.rc('font', size=20) 
 plt.rc('figure', figsize = (12, 5))
 
 '''
@@ -48,29 +53,13 @@ def global_landf():
 -------------------------------PARAMS------------------------------------------
 '''
 
-# land_frac = {"-90" : 1, "-85" : 1, "-80" : 0.85, "-75" : 0.7, "-70" : 0.45, "-65" : 0.1,
-#              "-60" : 0, "-55" : 0, "-50" : 0.05, "-45" : 0.05, "-40" : 0.05, "-35" : 0.1,
-#              "-30" : 0.2, "-25" : 0.25, "-20" : 0.25, "-15" : 0.2, "-10" : 0.2, "-5" : 0.25,
-#              "0" : 0.2, "5" : 0.2, "10" : 0.25, "15" : 0.25, "20" : 0.3, "25" : 0.35,
-#              "30" : 0.4,  "35" : 0.4, "40" : 0.4, "45" : 0.5, "50" : 0.55, "55" : 0.55,
-#              "60" : 0.6, "65" : 0.8, "70" : 0.6, "75" : 0.25, "80" : 0.15, "85" : 0.05,
-#              "90" : 0} # land fraction per latitude band as determined from []
-
-land_frac = {"-90" : 1, "-85" : 1, "-80" : 1, "-75" : 1, "-70" : 1, "-65" : 1,
-             "-60" : 1, "-55" : 1, "-50" : 1, "-45" : 1, "-40" : 1, "-35" : 1,
-             "-30" : 1, "-25" : 1, "-20" : 1, "-15" : 1, "-10" : 1, "-5" : 1,
-             "0" : 1, "5" : 1, "10" : 1, "15" : 1, "20" : 1, "25" : 1,
-             "30" : 1,  "35" : 1, "40" : 1, "45" : 1, "50" : 1, "55" : 1,
-             "60" : 1, "65" : 1, "70" : 1, "75" : 1, "80" : 1, "85" : 1,
-             "90" : 1} # land fraction per latitude band as determined from []
-
-#land_frac = {"-90" : 0.5, "-85" : 0.5, "-80" : 0.5, "-75" : 0.5, "-70" : 0.5, "-65" : 0.5,
-#             "-60" : 0.5, "-55" : 0.5, "-50" : 0.5, "-45" : 0.5, "-40" : 0.5, "-35" : 0.5,
-#             "-30" : 0.5, "-25" : 0.5, "-20" : 0.5, "-15" : 0.5, "-10" : 0.5, "-5" : 0.5,
-#             "0" : 0.5, "5" : 0.5, "10" : 0.5, "15" : 0.5, "20" : 0.5, "25" : 0.5,
-#             "30" : 0.5,  "35" : 0.5, "40" : 0.5, "45" : 0.5, "50" : 0.5, "55" : 0.5,
-#             "60" : 0.5, "65" : 0.5, "70" : 0.5, "75" : 0.5, "80" : 0.5, "85" : 0.5,
-#             "90" : 0.5} # land fraction per latitude band as determined from []
+land_frac = {"-90" : 1, "-85" : 1, "-80" : 0.85, "-75" : 0.7, "-70" : 0.45, "-65" : 0.1,
+              "-60" : 0, "-55" : 0, "-50" : 0.05, "-45" : 0.05, "-40" : 0.05, "-35" : 0.1,
+              "-30" : 0.2, "-25" : 0.25, "-20" : 0.25, "-15" : 0.2, "-10" : 0.2, "-5" : 0.25,
+              "0" : 0.2, "5" : 0.2, "10" : 0.25, "15" : 0.25, "20" : 0.3, "25" : 0.35,
+              "30" : 0.4,  "35" : 0.4, "40" : 0.4, "45" : 0.5, "50" : 0.55, "55" : 0.55,
+              "60" : 0.6, "65" : 0.8, "70" : 0.6, "75" : 0.25, "80" : 0.15, "85" : 0.05,
+              "90" : 0} # land fraction per latitude band as determined from []
 
 latitudes = np.arange(-90, 91, 5) # latitudes
 S_0 = 1366 # solar constant, W/m^2
@@ -171,6 +160,7 @@ class Daisies:
         return max(1 - 4 * (T_opt - self.T_daisy(daisytype))**2 / (T_max - T_min)**2, 0)
     
     def dA_dt(self, daisytype):
+        label = str(int(round(np.degrees(self.phi))))
         if daisytype == "black":
             A = self.A_b
         elif daisytype == "white":
@@ -226,7 +216,7 @@ class Daisies:
 '''
 
 #luminosities = np.concatenate([np.arange(0.9, 2, 0.1), np.arange(1.9, 0.8, -0.1)])
-luminosities = np.arange(0.9, 2, 0.1)
+luminosities = np.arange(1, 3.05, 0.05)
 
 chosen_lat = 0
 
@@ -245,9 +235,12 @@ for idx, L in enumerate(luminosities):
     for idy, lat in enumerate(latitudes):
         print("computing steady state solution for latitude #{0} out of {1}.".format(idy + 1, len(latitudes)))
         
-        if idx == 0:
-            A_w_init = land_frac[str(int(round(lat)))] / 2 # start with half of the available area white daisies
-            A_b_init = land_frac[str(int(round(lat)))] / 2 # start with half of the available area black daisies
+        if idx == 0 and lat != -60 and lat != -55:
+            A_w_init = 0.01 # start with half of the available area white daisies
+            A_b_init = 0.01 # start with half of the available area black daisies
+        elif idx == 0 and lat == -60 and lat == -55:
+            A_w_init = 0 # start with half of the available area white daisies
+            A_b_init = 0 # start with half of the available area black daisies
         else:
             A_w_init = A_w_steady_lat[idx - 1, idy] # start with steady state white daisies
             A_b_init = A_b_steady_lat[idx - 1, idy] # start with steady state black daisies
@@ -261,128 +254,549 @@ for idx, L in enumerate(luminosities):
         # temperature without daisies
         [Temp_nodaisiesnotrans[idx, idy], Temp_nodaisiestrans[idx, idy]] = Daisies(0, 0, L, lat).avg_T_lat()
 
+#%%
 fig = plt.figure()
 ax = Axes3D(fig)
 X, Y = np.meshgrid(latitudes, luminosities)
-surf = ax.plot_surface(X, Y, Temp_nodaisiestrans, cmap=cm.jet, linewidth=0.1)
+surf = ax.plot_surface(X, Y, A_w_steady_lat, cmap=cm.jet, linewidth=0.1, alpha=0.8)
 fig.colorbar(surf, shrink=0.5, aspect=5)
+#cset = ax.contour(X, Y, A_w_steady_lat, zdir='x', offset=-90, cmap=cm.coolwarm)
+#cset = ax.contour(X, Y, A_w_steady_lat, zdir='y', offset=2.9, cmap=cm.coolwarm)
+ax.set_xlabel("latitude")
+ax.set_ylabel("luminosity")
+ax.set_zlabel("temperature")
+plt.title("temperature")
 plt.show()
+
 #%%
-'''
---------------------------VARYING LATITUDE-----------------------------------
-'''
-A_w_steady_lat = np.zeros((len(latitudes),))
-A_b_steady_lat = np.zeros((len(latitudes),))
-A_g_steady_lat = np.zeros((len(latitudes),))
-Temp_notrans = np.zeros((len(latitudes),))
-Temp_nodaisiestrans = np.zeros((len(latitudes),))
-Temp_nodaisiesnotrans = np.zeros((len(latitudes),))
-Temp_trans = np.zeros((len(latitudes),))
+X, Y = np.meshgrid(luminosities,latitudes)
+fig, (axs) = plt.subplots(nrows = 2, ncols = 1, sharex = True)
 
-lum = 1.2
+cs = axs[0].contourf(X, Y, Temp_nodaisiestrans.T, levels=np.arange(-20,201,1),
+                     extend = 'both', cmap=cm.jet)
+axs[0].set_ylabel('latitude')
+axs[0].set_yticks(np.arange(-90,91,45))
+axs[0].set_title("(a)", fontsize = 20)
 
+cs3 = axs[1].contourf(X, Y, Temp_trans.T, levels=np.arange(-20,201,1),
+                      extend = 'both', cmap=cm.jet)
+axs[1].set_xlabel('luminosity')
+axs[1].set_ylabel('latitude')
+axs[1].set_yticks(np.arange(-90,91,45))
+axs[1].set_title("(b)", fontsize = 20)
+col = fig.colorbar(cs3, ax = axs[[0,1]], label = "temperature ($\degree$C)")
+plt.show()
+
+#%%
+fig = plt.figure()
+plt.tight_layout()
+ax = fig.add_subplot(121,projection='3d')
+#ax = Axes3D(fig)
+ax.xaxis.labelpad=20
+ax.yaxis.labelpad=20
+ax.zaxis.labelpad=20
+X, Y = np.meshgrid(latitudes, luminosities)
+surf = ax.plot_surface(X, Y, A_w_steady_lat * 100, cmap=cm.jet, linewidth=0.1, alpha=0.8)
+col = fig.colorbar(surf, shrink=0.5, aspect=5)
+ax.set_yticks(np.arange(1, 3.5, 0.5))
+col.mappable.set_clim(0, 60)
+col.remove()
+cset = ax.contour(X, Y, np.tile([land_frac[key] * 100 for key in land_frac.keys()], (41,1)),
+                  zdir='y', offset=3, cmap=cm.coolwarm)
+ax.set_xlabel("latitude", fontweight='bold')
+ax.set_ylabel("luminosity", fontweight='bold')
+ax.set_zlabel("area (%)", fontweight='bold')
+#plt.title("Area white daisies")
+
+ax = fig.add_subplot(122,projection='3d')
+#ax = Axes3D(fig)
+ax.xaxis.labelpad=20
+ax.yaxis.labelpad=20
+ax.zaxis.labelpad=20
+X, Y = np.meshgrid(latitudes, luminosities)
+surf = ax.plot_surface(X, Y, A_b_steady_lat * 100, cmap=cm.jet, linewidth=0.1, alpha=0.8)
+col = fig.colorbar(surf, shrink=0.5, aspect=5)
+col.mappable.set_clim(0, 60)
+#col.remove()
+cset = ax.contour(X, Y, np.tile([land_frac[key] * 100 for key in land_frac.keys()], (41,1)),
+                  zdir='y', offset=3, cmap=cm.coolwarm, clabel = "Fertile ground (%)")
+ax.clabel(cset, "Fertile ground (%)")
+ax.set_xlabel("latitude", fontweight='bold')
+ax.set_ylabel("luminosity", fontweight='bold')
+ax.set_zlabel("area (%)", fontweight='bold')
+ax.set_yticks(np.arange(1, 3.5, 0.5))
+ax.legend()
+#plt.title("Area black daisies")
+plt.show()
+
+#%%
+lon_pos = {"-90" : [-85,85,-85,85,-85,85],
+               "-85" : [-85,85,-85,85,-85,85],
+               "-80" : [-85,85,-85,85,-85,85],
+               "-75" : [-10,85,-10,85,-10,85],
+               "-70" : [-10,85,-10,85,-10,85],
+               "-65" : [-65,-62,50,55,50,55],
+               "-60" : [-100]*6,
+               "-55" : [-100]*6,
+               "-50" : [-74,-69]*3,
+               "-45" : [-72,-67]*3,
+               "-40" : [-70,-66]*3,
+               "-35" : [-71,-59]*3,
+               "-30" : [-70,-53,18,28,18,28],
+               "-25" : [-69,-50,16,31,16,31],
+               "-20" : [-69,-42,15,33,45,48],
+               "-15" : [-70,-40,14,37,47,49],
+               "-10" : [-77,-35,13,40,13,40],
+               "-5" : [-80,-35,12,39,12,39],
+               "0" : [-80,-50,10,42,10,42],
+               "5" : [-75,-57,-10,48,-10,48],
+               "10" : [-75,-62,-15,50,-15,43],
+               "15" : [-15,37,43,48,73,81],
+               "20" : [-16,34,41,56,73,86],
+               "25" : [-13,33,38,48,62,90],
+               "30" : [-9,13,34,90,34,90],
+               "35" : [0,10,37,90,37,90],
+               "40" : [-90,-76,-8,0,28,90],
+               "45" : [-90,-71,0,27,55,90],
+               "50" : [-90,-68,1,90,1,90],
+               "55" : [-90,-64,-3,-1,22,90],
+               "60" : [-90,-67,5,17,23,90],
+               "65" : [-90,-69,-52,-41,14,90],
+               "70" : [-90,-69,-50,-27,70,90],
+               "75" : [-55,-23]*3,
+               "80" : [-64,-23]*3,
+               "85" : [-38,-30]*3,
+               "90" : [-100]*6} # land locations on each latitude
+plot_daisy_nr = 50
+
+idx_lum = 6
+
+fig = plt.figure(figsize=(24, 12))
+#ax = fig.add_subplot(122)
+#gs = gridspec.GridSpec(1, 3, width_ratios=[1, 2, 1]) 
+ax0 = fig.add_subplot(231)
+ax1 = fig.add_subplot(232)
+ax2 = fig.add_subplot(233)
+
+ax0.plot(A_w_steady_lat[idx_lum] * 100, latitudes, color = 'white', label = "white")
+ax0.plot(A_b_steady_lat[idx_lum] * 100, latitudes, color = 'black', label = "black")
+ax0.invert_xaxis()
+ax0.set_ylabel("latitude")
+ax0.set_xlabel("Daisy area (% of total)")
+ax0.set_xlim([0,70])
+ax0.set_yticks(np.arange(-90,91,45))
+ax0.legend(frameon = True, facecolor='silver', loc='center right')
+ax0.set_facecolor('darkgrey')
+ax0.grid(color = 'grey')
+
+map = Basemap(projection='ortho', lat_0=-0, lon_0=-0, resolution='c', ax=ax1)
+map.drawlsmask(land_color='sandybrown', ocean_color='blue')
+
+#create and draw meridians and parallels grid lines
+parallels = np.arange( -90., 100.,10.)
+map.drawparallels(parallels, labels=[1,0,0,0], fontsize=10)
+
+# plot daisies as points in map
 for idx, lat in enumerate(latitudes):
-    print("computing steady state solution for latitude #{0} out of {1}.".format(idx + 1, len(latitudes)))
-    A_w_init = 0.5#land_frac[str(int(round(lat)))] / 2
-    A_b_init = 0.5#land_frac[str(int(round(lat)))] / 2
-    [A_w_steady_lat[idx], A_b_steady_lat[idx]] = Daisies(A_w_init, A_b_init, lum, lat).steady_state_sol(include_daisy = daisy_setting)
-    Daisy_sol = Daisies(A_w_steady_lat[idx], A_b_steady_lat[idx], lum, lat)
-    [Temp_notrans[idx], Temp_trans[idx]] = Daisy_sol.avg_T_lat()
-    [Temp_nodaisiesnotrans[idx], Temp_nodaisiestrans[idx]] = Daisies(0, 0, lum, lat).avg_T_lat()
-    A_g_steady_lat[idx] = Daisy_sol.A_g()
+    plot_white_nr = int(plot_daisy_nr * A_w_steady_lat[idx_lum][idx])
+    plot_black_nr = int(plot_daisy_nr * A_b_steady_lat[idx_lum][idx])
     
-plt.figure()
-ax = plt.gca()
-ax.set_facecolor('darkgrey')
-plt.plot(A_w_steady_lat, latitudes,color = 'white', label = 'Area white daisies (-)')
-plt.plot(A_b_steady_lat, latitudes, color = 'black', label = 'Area black daisies (-)')
-#plt.plot(A_w_steady_lat + A_b_steady_lat, latitudes, color = 'black', label = 'Area total (-)')
-plt.xlabel("Area (-)")
-plt.ylabel("latitude (deg)")
-plt.title("Run for {0} daisies".format(daisy_setting))
-plt.legend()
-plt.grid(color = 'grey')
+    plot_list = ["white"] * plot_white_nr + ["black"] * plot_black_nr
+    
+    for daisy in plot_list:
+        items = lon_pos[str(lat)]
+        x, y = map(choice([randint(items[0],items[1]), randint(items[2],items[3]), randint(items[4],items[5])]),
+                          lat + np.random.normal(0, 0.5))
+        map.plot(x, y, 'X', markersize=6, color = daisy)
 
-plt.figure()
-ax = plt.gca()
-ax.set_facecolor('darkgrey')
-#plt.plot(Temp_notrans, latitudes, color = 'white', label = 'excluding meridional heat transfer')
-plt.plot(Temp_trans, latitudes, color = 'black', label = 'including meridional heat transfer')
-plt.plot(Temp_nodaisiestrans, latitudes, color = 'blue', label = 'including meridional heat transfer, but no daisies')
-plt.xlabel("temperature (deg)")
-plt.ylabel("latitude (deg)")
-plt.title("Run for {0} daisies".format(daisy_setting))
-plt.legend()
-plt.grid(color = 'grey')
+ax1.set_title("(a)\nL = {0}".format(round(luminosities[idx_lum],1)))
+white_legend = ax1.plot(np.nan, np.nan, 'X', color = "white", label = "white daisy")
+black_legend = ax1.plot(np.nan, np.nan, 'X', color = "black", label = "black daisy")
+ax1.legend(frameon = True, facecolor='silver', markerscale=1.2, bbox_to_anchor=(0.75, 0.1),
+           fontsize=16)
 
-
-fig, ax = plt.subplots()
-ax.stackplot(latitudes, A_w_steady_lat, A_b_steady_lat, A_g_steady_lat,
-              colors = ['grey', 'black', 'orange'], labels = 
-              ['Area white daisies', 'Area black daisies', 'Area fertile ground'],
-              alpha=0.4)
-ax.plot(latitudes, list(land_frac.values()),
-         label = 'land area available')
-ax.plot(np.nan, '-r', label = "Temperature (deg)")
-ax.set_xlabel("Latitude (deg)")
-ax.set_ylabel("Area (-)")
-ax2=ax.twinx()
-ax2.plot(latitudes, Temp_trans, color = 'red', label = "Temperature")
-ax2.set_ylabel("Temperature (deg)")
-ax.legend(loc=0)
-ax.grid(color = 'grey')
-ax2.grid(False)
-
-#%%
-'''
--------------------------------FIGURES-----------------------------------------
-'''
-
-fig, (ax1, ax2) = plt.subplots(nrows=2, sharex=True)
-
-ax1.set_facecolor('darkgrey')
-ax1.plot(luminosities[:int(len(luminosities) / 2)], area_white_steady[:int(len(luminosities) / 2)],\
-         color = 'white', label = 'White daisies (increasing L)')
-ax1.plot(luminosities[int(len(luminosities) / 2):], area_white_steady[int(len(luminosities) / 2):],\
-         color = 'white', linestyle = 'dashed', label = 'White daisies (decreasing L)')
-ax1.plot(luminosities[:int(len(luminosities) / 2)], area_total[:int(len(luminosities) / 2)],\
-         color = 'blue', label = 'All daisies (increasing L)')
-ax1.plot(luminosities[int(len(luminosities) / 2):], area_total[int(len(luminosities) / 2):],\
-         color = 'blue', linestyle =  'dashed', label = 'All daisies (decreasing L)')
-ax1.plot(luminosities[:int(len(luminosities) / 2)], area_black_steady[:int(len(luminosities) / 2)],\
-         color = 'black', label = 'Black daisies (increasing L)')
-ax1.plot(luminosities[int(len(luminosities) / 2):], area_black_steady[int(len(luminosities) / 2):],\
-        color = 'black', linestyle = 'dashed', label = 'Black daisies (decreasing L)')
-ax1.set_ylabel("Area (-)")
-ax1.legend()
-ax1.grid(color = 'grey')
-
+ax2.plot(Temp_trans[idx_lum], latitudes, color = 'blue', label = "with daisies")
+ax2.plot(Temp_nodaisiestrans[idx_lum], latitudes, color = 'red', label = "without daisies")
+ax2.set_ylabel("latitude")
+ax2.set_xlabel("Temperature (deg C)")
+ax2.set_yticks(np.arange(-90,91,45))
+ax2.yaxis.set_ticks_position("right")
+ax2.yaxis.set_label_position("right")
+ax2.legend(frameon = True, facecolor='silver', loc='center left')
 ax2.set_facecolor('darkgrey')
-ax2.plot(luminosities[:int(len(luminosities) / 2)], temperatures[:int(len(luminosities) / 2)],\
-         color = 'darkblue', label = "increasing L")
-ax2.plot(luminosities[int(len(luminosities) / 2):], temperatures[int(len(luminosities) / 2):],\
-         color = 'darkblue', linestyle = 'dashed', label = "decreasing L")
-ax2.legend()
-ax2.set_ylabel("Temperature (deg C)")
-ax2.set_xlabel("Solar luminosity")
 ax2.grid(color = 'grey')
 
-fig.suptitle("Run for {0} daisies, adjusting initial conditions".format(daisy_setting))
+ax3 = fig.add_subplot(234)
+ax4 = fig.add_subplot(235)
+ax5 = fig.add_subplot(236)
+idx_lum = 9
 
-plt.figure()
-ax = plt.gca()
-ax.set_facecolor('darkgrey')
-plt.plot(luminosities[:int(len(luminosities) / 2)], growth_white[:int(len(luminosities) / 2)],\
-         color = 'white', label = 'Growth rate white daisies (increasing L)')
-plt.plot(luminosities[int(len(luminosities) / 2):], growth_white[int(len(luminosities) / 2):],\
-         color = 'white', linestyle = 'dashed', label = 'Growth rate white daisies (decreasing L)')
-plt.plot(luminosities[:int(len(luminosities) / 2)], growth_black[:int(len(luminosities) / 2)],\
-         color = 'black', label = 'Growth rate black daisies (increasing L)')
-plt.plot(luminosities[int(len(luminosities) / 2):], growth_black[int(len(luminosities) / 2):],\
-        color = 'black', linestyle = 'dashed', label = 'Growth rate black daisies (decreasing L)')
-plt.axhline(gamma, label = "Death rate")
-plt.xlabel("Solar luminosity")
-plt.ylabel("Growth/death rate (-)")
-plt.title("Run for {0} daisies, adjusting initial conditions".format(daisy_setting))
-plt.legend()
-plt.grid(color = 'grey') 
+ax3.plot(A_w_steady_lat[idx_lum] * 100, latitudes, color = 'white', label = "white")
+ax3.plot(A_b_steady_lat[idx_lum] * 100, latitudes, color = 'black', label = "black")
+ax3.invert_xaxis()
+ax3.set_ylabel("latitude")
+ax3.set_xlabel("Daisy area (% of total)")
+ax3.set_xlim([0,70])
+ax3.set_yticks(np.arange(-90,91,45))
+#ax3.legend(frameon = True, facecolor='silver', loc='upper left')
+ax3.set_facecolor('darkgrey')
+ax3.grid(color = 'grey')
+
+map = Basemap(projection='ortho', lat_0=-0, lon_0=-0, resolution='c', ax=ax4)
+map.drawlsmask(land_color='sandybrown', ocean_color='blue')
+
+#create and draw meridians and parallels grid lines
+parallels = np.arange( -90., 100.,10.)
+map.drawparallels(parallels, labels=[1,0,0,0], fontsize=10)
+
+# plot daisies as points in map
+for idx, lat in enumerate(latitudes):
+    plot_white_nr = int(plot_daisy_nr * A_w_steady_lat[idx_lum][idx])
+    plot_black_nr = int(plot_daisy_nr * A_b_steady_lat[idx_lum][idx])
+    
+    plot_list = ["white"] * plot_white_nr + ["black"] * plot_black_nr
+    
+    for daisy in plot_list:
+        items = lon_pos[str(lat)]
+        x, y = map(choice([randint(items[0],items[1]), randint(items[2],items[3]), randint(items[4],items[5])]),
+                          lat + np.random.normal(0, 0.5))
+        map.plot(x, y, 'X', markersize=6, color = daisy)
+
+ax4.set_title("(b)\nL = {0}".format(round(luminosities[idx_lum],2)))
+white_legend = ax4.plot(np.nan, np.nan, 'X', color = "white", label = "white daisy")
+black_legend = ax4.plot(np.nan, np.nan, 'X', color = "black", label = "black daisy")
+#ax4.legend(frameon = True, facecolor='silver', markerscale=1.5, bbox_to_anchor=(0.8, 0.1))
+
+ax5.plot(Temp_trans[idx_lum], latitudes, color = 'blue', label = "with daisies")
+ax5.plot(Temp_nodaisiestrans[idx_lum], latitudes, color = 'red', label = "without daisies")
+ax5.set_ylabel("latitude")
+ax5.set_xlabel("Temperature (deg C)")
+ax5.set_yticks(np.arange(-90,91,45))
+ax5.yaxis.set_ticks_position("right")
+ax5.yaxis.set_label_position("right")
+#ax5.legend(frameon = True, facecolor='silver', loc='center left')
+ax5.set_facecolor('darkgrey')
+ax5.grid(color = 'grey')
+
+fig = plt.figure(figsize=(24, 12))
+ax6 = fig.add_subplot(231)
+ax7 = fig.add_subplot(232)
+ax8 = fig.add_subplot(233)
+idx_lum = 12
+
+ax6.plot(A_w_steady_lat[idx_lum] * 100, latitudes, color = 'white', label = "white")
+ax6.plot(A_b_steady_lat[idx_lum] * 100, latitudes, color = 'black', label = "black")
+ax6.invert_xaxis()
+ax6.set_ylabel("latitude")
+ax6.set_xlabel("Daisy area (% of total)")
+ax6.set_yticks(np.arange(-90,91,45))
+ax6.set_xlim([0,70])
+#ax6.legend(frameon = True, facecolor='silver', loc='upper left')
+ax6.set_facecolor('darkgrey')
+ax6.grid(color = 'grey')
+
+map = Basemap(projection='ortho', lat_0=-0, lon_0=-0, resolution='c', ax=ax7)
+map.drawlsmask(land_color='sandybrown', ocean_color='blue')
+
+#create and draw meridians and parallels grid lines
+parallels = np.arange( -90., 100.,10.)
+map.drawparallels(parallels, labels=[1,0,0,0], fontsize=10)
+
+# plot daisies as points in map
+for idx, lat in enumerate(latitudes):
+    plot_white_nr = int(plot_daisy_nr * A_w_steady_lat[idx_lum][idx])
+    plot_black_nr = int(plot_daisy_nr * A_b_steady_lat[idx_lum][idx])
+    
+    plot_list = ["white"] * plot_white_nr + ["black"] * plot_black_nr
+    
+    for daisy in plot_list:
+        items = lon_pos[str(lat)]
+        x, y = map(choice([randint(items[0],items[1]), randint(items[2],items[3]), randint(items[4],items[5])]),
+                          lat + np.random.normal(0, 0.5))
+        map.plot(x, y, 'X', markersize=6, color = daisy)
+
+ax7.set_title("(c)\nL = {0}".format(round(luminosities[idx_lum],1)))
+white_legend = ax7.plot(np.nan, np.nan, 'X', color = "white", label = "white daisy")
+black_legend = ax7.plot(np.nan, np.nan, 'X', color = "black", label = "black daisy")
+#ax7.legend(frameon = True, facecolor='silver', markerscale=1.5, bbox_to_anchor=(0.8, 0.1))
+
+ax8.plot(Temp_trans[idx_lum], latitudes, color = 'blue', label = "with daisies")
+ax8.plot(Temp_nodaisiestrans[idx_lum], latitudes, color = 'red', label = "without daisies")
+ax8.set_ylabel("latitude")
+ax8.set_xlabel("Temperature (deg C)")
+ax8.set_yticks(np.arange(-90,91,45))
+ax8.yaxis.set_ticks_position("right")
+ax8.yaxis.set_label_position("right")
+#ax8.legend(frameon = True, facecolor='silver', loc='center left')
+ax8.set_facecolor('darkgrey')
+ax8.grid(color = 'grey')
+
+ax9 = fig.add_subplot(234)
+ax10 = fig.add_subplot(235)
+ax11 = fig.add_subplot(236)
+idx_lum = 30
+
+ax9.plot(A_w_steady_lat[idx_lum] * 100, latitudes, color = 'white', label = "white")
+ax9.plot(A_b_steady_lat[idx_lum] * 100, latitudes, color = 'black', label = "black")
+ax9.invert_xaxis()
+ax9.set_ylabel("latitude")
+ax9.set_xlabel("Daisy area (% of total)")
+ax9.set_xlim([0,70])
+ax9.set_yticks(np.arange(-90,91,45))
+#ax9.legend(frameon = True, facecolor='silver', loc='upper left')
+ax9.set_facecolor('darkgrey')
+ax9.grid(color = 'grey')
+
+map = Basemap(projection='ortho', lat_0=-0, lon_0=-0, resolution='c', ax=ax10)
+map.drawlsmask(land_color='sandybrown', ocean_color='blue')
+
+#create and draw meridians and parallels grid lines
+parallels = np.arange( -90., 100.,10.)
+map.drawparallels(parallels, labels=[1,0,0,0], fontsize=10)
+
+# plot daisies as points in map
+for idx, lat in enumerate(latitudes):
+    plot_white_nr = int(plot_daisy_nr * A_w_steady_lat[idx_lum][idx])
+    plot_black_nr = int(plot_daisy_nr * A_b_steady_lat[idx_lum][idx])
+    
+    plot_list = ["white"] * plot_white_nr + ["black"] * plot_black_nr
+    
+    for daisy in plot_list:
+        items = lon_pos[str(lat)]
+        x, y = map(choice([randint(items[0],items[1]), randint(items[2],items[3]), randint(items[4],items[5])]),
+                          lat + np.random.normal(0, 0.5))
+        map.plot(x, y, 'X', markersize=6, color = daisy)
+
+ax10.set_title("(d)\nL = {0}".format(round(luminosities[idx_lum],2)))
+white_legend = ax10.plot(np.nan, np.nan, 'X', color = "white", label = "white daisy")
+black_legend = ax10.plot(np.nan, np.nan, 'X', color = "black", label = "black daisy")
+#ax10.legend(frameon = True, facecolor='silver', markerscale=1.5, bbox_to_anchor=(0.8, 0.1))
+
+ax11.plot(Temp_trans[idx_lum], latitudes, color = 'blue', label = "with daisies")
+ax11.plot(Temp_nodaisiestrans[idx_lum], latitudes, color = 'red', label = "without daisies")
+ax11.set_ylabel("latitude")
+ax11.set_xlabel("Temperature (deg C)")
+ax11.set_yticks(np.arange(-90,91,45))
+ax11.yaxis.set_ticks_position("right")
+ax11.yaxis.set_label_position("right")
+#ax11.legend(frameon = True, facecolor='silver', loc='center left')
+ax11.set_facecolor('darkgrey')
+ax11.grid(color = 'grey')
+#%%
+
+for idx_lum in range(len(luminosities)):
+    plot_daisy_nr = 50
+    #idx_lum = 4
+    print(idx_lum)
+    lon_pos = {"-90" : [-85,85,-85,85,-85,85],
+               "-85" : [-85,85,-85,85,-85,85],
+               "-80" : [-85,85,-85,85,-85,85],
+               "-75" : [-10,85,-10,85,-10,85],
+               "-70" : [-10,85,-10,85,-10,85],
+               "-65" : [-65,-62,50,55,50,55],
+               "-60" : [-100]*6,
+               "-55" : [-100]*6,
+               "-50" : [-74,-69]*3,
+               "-45" : [-72,-67]*3,
+               "-40" : [-70,-66]*3,
+               "-35" : [-71,-59]*3,
+               "-30" : [-70,-53,18,28,18,28],
+               "-25" : [-69,-50,16,31,16,31],
+               "-20" : [-69,-42,15,33,45,48],
+               "-15" : [-70,-40,14,37,47,49],
+               "-10" : [-77,-35,13,40,13,40],
+               "-5" : [-80,-35,12,39,12,39],
+               "0" : [-80,-50,10,42,10,42],
+               "5" : [-75,-57,-10,48,-10,48],
+               "10" : [-75,-62,-15,50,-15,43],
+               "15" : [-15,37,43,48,73,81],
+               "20" : [-16,34,41,56,73,86],
+               "25" : [-13,33,38,48,62,90],
+               "30" : [-9,13,34,90,34,90],
+               "35" : [0,10,37,90,37,90],
+               "40" : [-90,-76,-8,0,28,90],
+               "45" : [-90,-71,0,27,55,90],
+               "50" : [-90,-68,1,90,1,90],
+               "55" : [-90,-64,-3,-1,22,90],
+               "60" : [-90,-67,5,17,23,90],
+               "65" : [-90,-69,-52,-41,14,90],
+               "70" : [-90,-69,-50,-27,70,90],
+               "75" : [-55,-23]*3,
+               "80" : [-64,-23]*3,
+               "85" : [-38,-30]*3,
+               "90" : [-100]*6} # land locations on each latitude        
+    fig = plt.figure(figsize=(24, 12)) 
+    fig.suptitle("Daisy World", fontsize = 50)
+    gs = gridspec.GridSpec(1, 3, width_ratios=[1, 2, 1]) 
+    ax0 = plt.subplot(gs[0])
+    ax1 = plt.subplot(gs[1])
+    ax2 = plt.subplot(gs[2])
+    
+    ax0.plot(A_w_steady_lat[idx_lum] * 100, latitudes, color = 'white', label = "white")
+    ax0.plot(A_b_steady_lat[idx_lum] * 100, latitudes, color = 'black', label = "black")
+    ax0.invert_xaxis()
+    ax0.set_ylabel("latitude")
+    ax0.set_xlabel("Daisy area (% of total)")
+    ax0.set_xlim([0,70])
+    ax0.legend(frameon = True, facecolor='silver', loc='upper left')
+    ax0.set_facecolor('darkgrey')
+    ax0.grid(color = 'grey')
+    
+    map = Basemap(projection='ortho', lat_0=-0, lon_0=-0, resolution='c', ax=ax1)
+    map.drawlsmask(land_color='sandybrown', ocean_color='blue')
+    
+    #create and draw meridians and parallels grid lines
+    parallels = np.arange( -90., 100.,10.)
+    map.drawparallels(parallels, labels=[1,0,0,0], fontsize=10)
+    #for i in np.arange(len(parallels)):
+    #    ax1.annotate(np.str(int(parallels[i])) + "$\degree$",xy=map(-90, int(parallels[i])),
+    #                 size = 10, xycoords='data')
+    
+    # plot daisies as points in map
+    for idx, lat in enumerate(latitudes):
+        plot_white_nr = int(plot_daisy_nr * A_w_steady_lat[idx_lum][idx])
+        plot_black_nr = int(plot_daisy_nr * A_b_steady_lat[idx_lum][idx])
+        
+        plot_list = ["white"] * plot_white_nr + ["black"] * plot_black_nr
+        
+        for daisy in plot_list:
+            items = lon_pos[str(lat)]
+            x, y = map(choice([randint(items[0],items[1]), randint(items[2],items[3]), randint(items[4],items[5])]),
+                              lat + np.random.normal(0, 0.5))
+            map.plot(x, y, 'X', markersize=6, color = daisy)
+    
+    ax1.set_title("Luminosity = {0}".format(round(luminosities[idx_lum],1)), fontsize = 30)
+    white_legend = ax1.plot(np.nan, np.nan, 'X', color = "white", label = "white daisy")
+    black_legend = ax1.plot(np.nan, np.nan, 'X', color = "black", label = "black daisy")
+    ax1.legend(frameon = True, facecolor='silver', markerscale=1.5, bbox_to_anchor=(0.8, 0.1), fontsize=14)
+    
+    ax2.plot(Temp_trans[idx_lum], latitudes, color = 'blue', label = "with daisies")
+    ax2.plot(Temp_nodaisiestrans[idx_lum], latitudes, color = 'red', label = "without daisies")
+    ax2.set_ylabel("latitude")
+    ax2.set_xlabel("Temperature (deg C)")
+    ax2.yaxis.set_ticks_position("right")
+    ax2.yaxis.set_label_position("right")
+    ax2.legend(frameon = True, facecolor='silver', loc='center left')
+    ax2.set_facecolor('darkgrey')
+    ax2.grid(color = 'grey')
+    plt.savefig('figs3/fig{0}.png'.format(idx_lum))
+
+#%%
+# '''
+# --------------------------VARYING LATITUDE-----------------------------------
+# '''
+# A_w_steady_lat = np.zeros((len(latitudes),))
+# A_b_steady_lat = np.zeros((len(latitudes),))
+# A_g_steady_lat = np.zeros((len(latitudes),))
+# Temp_notrans = np.zeros((len(latitudes),))
+# Temp_nodaisiestrans = np.zeros((len(latitudes),))
+# Temp_nodaisiesnotrans = np.zeros((len(latitudes),))
+# Temp_trans = np.zeros((len(latitudes),))
+
+# lum = 1.2
+
+# for idx, lat in enumerate(latitudes):
+#     print("computing steady state solution for latitude #{0} out of {1}.".format(idx + 1, len(latitudes)))
+#     A_w_init = 0.5#land_frac[str(int(round(lat)))] / 2
+#     A_b_init = 0.5#land_frac[str(int(round(lat)))] / 2
+#     [A_w_steady_lat[idx], A_b_steady_lat[idx]] = Daisies(A_w_init, A_b_init, lum, lat).steady_state_sol(include_daisy = daisy_setting)
+#     Daisy_sol = Daisies(A_w_steady_lat[idx], A_b_steady_lat[idx], lum, lat)
+#     [Temp_notrans[idx], Temp_trans[idx]] = Daisy_sol.avg_T_lat()
+#     [Temp_nodaisiesnotrans[idx], Temp_nodaisiestrans[idx]] = Daisies(0, 0, lum, lat).avg_T_lat()
+#     A_g_steady_lat[idx] = Daisy_sol.A_g()
+    
+# plt.figure()
+# ax = plt.gca()
+# ax.set_facecolor('darkgrey')
+# plt.plot(A_w_steady_lat, latitudes,color = 'white', label = 'Area white daisies (-)')
+# plt.plot(A_b_steady_lat, latitudes, color = 'black', label = 'Area black daisies (-)')
+# #plt.plot(A_w_steady_lat + A_b_steady_lat, latitudes, color = 'black', label = 'Area total (-)')
+# plt.xlabel("Area (-)")
+# plt.ylabel("latitude (deg)")
+# plt.title("Run for {0} daisies".format(daisy_setting))
+# plt.legend()
+# plt.grid(color = 'grey')
+
+# plt.figure()
+# ax = plt.gca()
+# ax.set_facecolor('darkgrey')
+# #plt.plot(Temp_notrans, latitudes, color = 'white', label = 'excluding meridional heat transfer')
+# plt.plot(Temp_trans, latitudes, color = 'black', label = 'including meridional heat transfer')
+# plt.plot(Temp_nodaisiestrans, latitudes, color = 'blue', label = 'including meridional heat transfer, but no daisies')
+# plt.xlabel("temperature (deg)")
+# plt.ylabel("latitude (deg)")
+# plt.title("Run for {0} daisies".format(daisy_setting))
+# plt.legend()
+# plt.grid(color = 'grey')
+
+
+# fig, ax = plt.subplots()
+# ax.stackplot(latitudes, A_w_steady_lat, A_b_steady_lat, A_g_steady_lat,
+#               colors = ['grey', 'black', 'orange'], labels = 
+#               ['Area white daisies', 'Area black daisies', 'Area fertile ground'],
+#               alpha=0.4)
+# ax.plot(latitudes, list(land_frac.values()),
+#          label = 'land area available')
+# ax.plot(np.nan, '-r', label = "Temperature (deg)")
+# ax.set_xlabel("Latitude (deg)")
+# ax.set_ylabel("Area (-)")
+# ax2=ax.twinx()
+# ax2.plot(latitudes, Temp_trans, color = 'red', label = "Temperature")
+# ax2.set_ylabel("Temperature (deg)")
+# ax.legend(loc=0)
+# ax.grid(color = 'grey')
+# ax2.grid(False)
+
+# #%%
+# '''
+# -------------------------------FIGURES-----------------------------------------
+# '''
+
+# fig, (ax1, ax2) = plt.subplots(nrows=2, sharex=True)
+
+# ax1.set_facecolor('darkgrey')
+# ax1.plot(luminosities[:int(len(luminosities) / 2)], area_white_steady[:int(len(luminosities) / 2)],\
+#          color = 'white', label = 'White daisies (increasing L)')
+# ax1.plot(luminosities[int(len(luminosities) / 2):], area_white_steady[int(len(luminosities) / 2):],\
+#          color = 'white', linestyle = 'dashed', label = 'White daisies (decreasing L)')
+# ax1.plot(luminosities[:int(len(luminosities) / 2)], area_total[:int(len(luminosities) / 2)],\
+#          color = 'blue', label = 'All daisies (increasing L)')
+# ax1.plot(luminosities[int(len(luminosities) / 2):], area_total[int(len(luminosities) / 2):],\
+#          color = 'blue', linestyle =  'dashed', label = 'All daisies (decreasing L)')
+# ax1.plot(luminosities[:int(len(luminosities) / 2)], area_black_steady[:int(len(luminosities) / 2)],\
+#          color = 'black', label = 'Black daisies (increasing L)')
+# ax1.plot(luminosities[int(len(luminosities) / 2):], area_black_steady[int(len(luminosities) / 2):],\
+#         color = 'black', linestyle = 'dashed', label = 'Black daisies (decreasing L)')
+# ax1.set_ylabel("Area (-)")
+# ax1.legend()
+# ax1.grid(color = 'grey')
+
+# ax2.set_facecolor('darkgrey')
+# ax2.plot(luminosities[:int(len(luminosities) / 2)], temperatures[:int(len(luminosities) / 2)],\
+#          color = 'darkblue', label = "increasing L")
+# ax2.plot(luminosities[int(len(luminosities) / 2):], temperatures[int(len(luminosities) / 2):],\
+#          color = 'darkblue', linestyle = 'dashed', label = "decreasing L")
+# ax2.legend()
+# ax2.set_ylabel("Temperature (deg C)")
+# ax2.set_xlabel("Solar luminosity")
+# ax2.grid(color = 'grey')
+
+# fig.suptitle("Run for {0} daisies, adjusting initial conditions".format(daisy_setting))
+
+# plt.figure()
+# ax = plt.gca()
+# ax.set_facecolor('darkgrey')
+# plt.plot(luminosities[:int(len(luminosities) / 2)], growth_white[:int(len(luminosities) / 2)],\
+#          color = 'white', label = 'Growth rate white daisies (increasing L)')
+# plt.plot(luminosities[int(len(luminosities) / 2):], growth_white[int(len(luminosities) / 2):],\
+#          color = 'white', linestyle = 'dashed', label = 'Growth rate white daisies (decreasing L)')
+# plt.plot(luminosities[:int(len(luminosities) / 2)], growth_black[:int(len(luminosities) / 2)],\
+#          color = 'black', label = 'Growth rate black daisies (increasing L)')
+# plt.plot(luminosities[int(len(luminosities) / 2):], growth_black[int(len(luminosities) / 2):],\
+#         color = 'black', linestyle = 'dashed', label = 'Growth rate black daisies (decreasing L)')
+# plt.axhline(gamma, label = "Death rate")
+# plt.xlabel("Solar luminosity")
+# plt.ylabel("Growth/death rate (-)")
+# plt.title("Run for {0} daisies, adjusting initial conditions".format(daisy_setting))
+# plt.legend()
+# plt.grid(color = 'grey') 
