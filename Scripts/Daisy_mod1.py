@@ -3,7 +3,7 @@
 """
 Created on Thu Dec 10 18:16:01 2020
 
-@author: T Y van der Duim
+@author: T Y van der Duim 
 """
 
 '''
@@ -20,9 +20,9 @@ import math as m
 plt.style.use('seaborn-darkgrid')
 plt.rc('text', usetex=False)
 plt.rc('font', family='times')
-plt.rc('xtick', labelsize=15) 
-plt.rc('ytick', labelsize=15) 
-plt.rc('font', size=15) 
+plt.rc('xtick', labelsize=10) 
+plt.rc('ytick', labelsize=10) 
+plt.rc('font', size=10) 
 plt.rc('figure', figsize = (12, 5))
 
 '''
@@ -35,9 +35,9 @@ alpha_w = 0.75 # albedo white daisies
 alpha_b = 0.25 # albedo black daisies
 gamma = 0.3 # death rate daisies per unit time
 p = 1 # proportion of the planets area which is fertile ground
-beta = 16 # Meridional heat transport (W m-2 K-1)
-b = 2.2 # Net outgoing longwave radiation due to daisies (W m-2 K-1)
-I_0 = 220 # Constant outgoing radiation due to planet (W m-2)
+beta = 16 # Heat Transport between Daisies and local environment (W m-2 K-1)
+I_0 = 220 # Constant outgoing longwave radiation at 0 degrees  (W m-2)
+b = 2.2 # Outgoing longwave radiation per degree (W m-2 K-1)
 L = 1 # Percentage of the current solar luminosity
 T_opt = 22.5 # optimum temperature daisies
 T_min = 5 # mimimum temperature daisies
@@ -113,7 +113,7 @@ maxstep = 1000 # maximum nr of steps
 time = np.linspace(t_init, t_end, maxstep + 1) # time array
 dt = (t_end - t_init) / maxstep
 
-luminosities = np.concatenate([np.arange(0.6, 3, 0.05), np.arange(2.95, 0.5, -0.05)])
+luminosities = np.concatenate([np.arange(0.6, 3.0, 0.05), np.arange(2.95, 0.55, -0.05)])
 A_w_steady = 0.01
 A_b_steady = 0.01
 
@@ -125,6 +125,7 @@ growth_black = np.zeros((len(luminosities),))
 Temp_white_daisy = np.zeros((len(luminosities),))
 Temp_black_daisy = np.zeros((len(luminosities),))
 temperatures = np.zeros((len(luminosities),))
+Temp_without_daisy = np.zeros((len(luminosities),))
 
 daisy_setting = "white & black"
 
@@ -136,8 +137,8 @@ for idx, L in enumerate(luminosities):
     # initial conditions
     it = 0
     if idx == 0:
-        A_w[it] = 0.5 # start with half of the available area white daisies
-        A_b[it] = 0.5 # start with half of the available area black daisies
+        A_w[it] = 0.01 # start with half of the available area white daisies
+        A_b[it] = 0.01 # start with half of the available area black daisies
     else:
         A_w[it] = A_w_steady # start with steady state white daisies
         A_b[it] = A_b_steady # start with steady state black daisies
@@ -164,6 +165,7 @@ for idx, L in enumerate(luminosities):
     growth_black[idx] = Daisies(A_w_steady, A_b_steady, L).growth_rate(daisytype = "black")
     Temp_white_daisy[idx] = Daisies(A_w_steady, A_b_steady, L).T_daisy(daisytype = "white")
     Temp_black_daisy[idx] = Daisies(A_w_steady, A_b_steady, L).T_daisy(daisytype = "black")
+    Temp_without_daisy[idx] = Daisies(0, 0, L).avg_T_g()
     temperatures[idx] = Daisies(A_w_steady, A_b_steady, L).avg_T_g()
     if A_w_steady < 1e-3:
         A_w_steady = 0.01
@@ -176,54 +178,51 @@ for idx, L in enumerate(luminosities):
 -------------------------------FIGURES-----------------------------------------
 '''
 
-fig, (ax1, ax2) = plt.subplots(nrows=2, sharex=True)
+fig, (ax1, ax2, ax3, ax4) = plt.subplots(nrows=4, sharex=True)
 
 ax1.set_facecolor('darkgrey')
 ax1.plot(luminosities[:int(len(luminosities) / 2)], area_white_steady[:int(len(luminosities) / 2)],\
-         color = 'white', label = 'White daisies (increasing L)')
-ax1.plot(luminosities[int(len(luminosities) / 2):], area_white_steady[int(len(luminosities) / 2):],\
-         color = 'white', linestyle = 'dashed', label = 'White daisies (decreasing L)')
-ax1.plot(luminosities[:int(len(luminosities) / 2)], area_total[:int(len(luminosities) / 2)],\
-         color = 'blue', label = 'All daisies (increasing L)')
-ax1.plot(luminosities[int(len(luminosities) / 2):], area_total[int(len(luminosities) / 2):],\
-         color = 'blue', linestyle =  'dashed', label = 'All daisies (decreasing L)')
+          color = 'white')
 ax1.plot(luminosities[:int(len(luminosities) / 2)], area_black_steady[:int(len(luminosities) / 2)],\
-         color = 'black', label = 'Black daisies (increasing L)')
-ax1.plot(luminosities[int(len(luminosities) / 2):], area_black_steady[int(len(luminosities) / 2):],\
-        color = 'black', linestyle = 'dashed', label = 'Black daisies (decreasing L)')
-ax1.set_ylabel("Area (-)")
-ax1.legend()
+        color = 'black')
+ax1.set_ylabel("Area")
+ax1.set_xlim([0.8,2.8])
+ax1.set_ylim([-0.05,0.8])
 ax1.grid(color = 'grey')
 
 ax2.set_facecolor('darkgrey')
-ax2.plot(luminosities[:int(len(luminosities) / 2)], temperatures[:int(len(luminosities) / 2)],\
-         color = 'darkblue', label = "increasing L")
-ax2.plot(luminosities[int(len(luminosities) / 2):], temperatures[int(len(luminosities) / 2):],\
-         color = 'darkblue', linestyle = 'dashed', label = "decreasing L")
-ax2.legend()
-ax2.set_ylabel("Temperature (deg C)")
-ax2.set_xlabel("Solar luminosity")
+ax2.plot(luminosities[:int(len(luminosities) / 2)], Temp_without_daisy[:int(len(luminosities) / 2):],\
+         color = 'darkblue', linestyle =  'dashed', label = "Temperature without Daisies")
+ax2.plot(luminosities[:int(len(luminosities) / 2):], temperatures[:int(len(luminosities) / 2):],\
+         color = 'darkblue', label = "Temperature with Daisies")
+ax2.legend(loc='upper left')
+ax2.set_ylabel("Temperature")
+ax2.set_xlim([0.8,2.8])
 ax2.grid(color = 'grey')
+ax2.set_yticks([0,50,100]) 
+ax2.set_yticklabels([0,50,100])
+ax2.set_ylim([-40,120])
 
-fig.suptitle("Run for {0} daisies, adjusting initial conditions".format(daisy_setting))
+ax3.set_facecolor('darkgrey')
+ax3.plot(luminosities[int(len(luminosities) / 2):], area_white_steady[int(len(luminosities) / 2):],\
+          color = 'white')
+ax3.plot(luminosities[int(len(luminosities) / 2):], area_black_steady[int(len(luminosities) / 2):],\
+        color = 'black')
+ax3.set_ylabel("Area")
+ax3.set_xlim([0.8,2.8])
+ax3.set_ylim([-0.05,0.8])
+ax3.grid(color = 'grey')
 
-plt.figure()
-ax = plt.gca()
-ax.set_facecolor('darkgrey')
-plt.plot(luminosities[:int(len(luminosities) / 2)], growth_white[:int(len(luminosities) / 2)],\
-         color = 'white', label = 'Growth rate white daisies (increasing L)')
-plt.plot(luminosities[int(len(luminosities) / 2):], growth_white[int(len(luminosities) / 2):],\
-         color = 'white', linestyle = 'dashed', label = 'Growth rate white daisies (decreasing L)')
-plt.plot(luminosities[:int(len(luminosities) / 2)], growth_black[:int(len(luminosities) / 2)],\
-         color = 'black', label = 'Growth rate black daisies (increasing L)')
-plt.plot(luminosities[int(len(luminosities) / 2):], growth_black[int(len(luminosities) / 2):],\
-        color = 'black', linestyle = 'dashed', label = 'Growth rate black daisies (decreasing L)')
-#plt.plot(Temp_white_daisy, growth_white, color = 'white', label = 'Growth rate white daisies')
-#plt.plot(Temp_black_daisy, growth_black, color = 'black', label = 'Death rate black daisies')
-plt.axhline(gamma, label = "Death rate")
-plt.xlabel("Daisy temperature (deg C)")
-#plt.ylim([-2, 2])
-plt.ylabel("Growth/death rate (-)")
-plt.title("Run for {0} daisies, adjusting initial conditions".format(daisy_setting))
-plt.legend()
-plt.grid(color = 'grey') 
+ax4.set_facecolor('darkgrey')
+ax4.plot(luminosities[int(len(luminosities) / 2):], Temp_without_daisy[int(len(luminosities) / 2):],\
+         color = 'darkblue', linestyle =  'dashed', label = "Temperature without Daisies")
+ax4.plot(luminosities[int(len(luminosities) / 2):], temperatures[int(len(luminosities) / 2):],\
+         color = 'darkblue', label = "Temperature with Daisies")
+ax4.legend(loc='lower right')
+ax4.set_xlabel("Luminosity")
+ax4.set_ylabel("Temperature")
+ax4.set_xlim([0.8,2.8])
+ax4.grid(color = 'grey')
+ax4.set_yticks([0,50,100]) 
+ax4.set_yticklabels([0,50,100])
+ax4.set_ylim([-40,120])
