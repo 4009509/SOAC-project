@@ -3,7 +3,7 @@
 """
 Created on Thu Dec 10 18:16:01 2020
 
-@author: T Y van der Duim 
+@authors: T Y van der Duim F Y J Drijfhout 
 """
 
 '''
@@ -178,6 +178,101 @@ for idx, L in enumerate(luminosities):
 -------------------------------FIGURES-----------------------------------------
 '''
 
+# Figure 2 report, Only White Daisies
+fig, (ax1, ax2, ax3, ax4) = plt.subplots(nrows=4, sharex=True)
+
+ax1.set_facecolor('darkgrey')
+ax1.plot(luminosities[:int(len(luminosities) / 2)], area_white_steady[:int(len(luminosities) / 2)],\
+          color = 'white')
+ax1.set_ylabel("Area")
+ax1.set_xlim([0.8,2.8])
+ax1.set_ylim([-0.05,0.8])
+ax1.grid(color = 'grey')
+
+ax2.set_facecolor('darkgrey')
+ax2.plot(luminosities[:int(len(luminosities) / 2)], Temp_without_daisy[:int(len(luminosities) / 2):],\
+         color = 'darkblue', linestyle =  'dashed', label = "Temperature without Daisies")
+ax2.plot(luminosities[:int(len(luminosities) / 2):], temperatures[:int(len(luminosities) / 2):],\
+         color = 'darkblue', label = "Temperature with Daisies")
+ax2.legend(loc='upper left')
+ax2.set_ylabel("Temperature")
+ax2.set_xlim([0.8,2.8])
+ax2.grid(color = 'grey')
+ax2.set_yticks([0,50,100]) 
+ax2.set_yticklabels([0,50,100])
+ax2.set_ylim([-40,120])
+
+ax3.set_facecolor('darkgrey')
+ax3.plot(luminosities[int(len(luminosities) / 2):], area_white_steady[int(len(luminosities) / 2):],\
+          color = 'white')
+ax3.set_ylabel("Area")
+ax3.set_xlim([0.8,2.8])
+ax3.set_ylim([-0.05,0.8])
+ax3.grid(color = 'grey')
+
+ax4.set_facecolor('darkgrey')
+ax4.plot(luminosities[int(len(luminosities) / 2):], Temp_without_daisy[int(len(luminosities) / 2):],\
+         color = 'darkblue', linestyle =  'dashed', label = "Temperature without Daisies")
+ax4.plot(luminosities[int(len(luminosities) / 2):], temperatures[int(len(luminosities) / 2):],\
+         color = 'darkblue', label = "Temperature with Daisies")
+ax4.legend(loc='lower right')
+ax4.set_xlabel("Luminosity")
+ax4.set_ylabel("Temperature")
+ax4.set_xlim([0.8,2.8])
+ax4.grid(color = 'grey')
+ax4.set_yticks([0,50,100]) 
+ax4.set_yticklabels([0,50,100])
+ax4.set_ylim([-40,120])
+
+
+# Figure 3 report, Only Black Daisies
+fig, (ax1, ax2, ax3, ax4) = plt.subplots(nrows=4, sharex=True)
+
+ax1.set_facecolor('darkgrey')
+ax1.plot(luminosities[:int(len(luminosities) / 2)], area_black_steady[:int(len(luminosities) / 2)],\
+        color = 'black')
+ax1.set_ylabel("Area")
+ax1.set_xlim([0.8,2.8])
+ax1.set_ylim([-0.05,0.8])
+ax1.grid(color = 'grey')
+
+ax2.set_facecolor('darkgrey')
+ax2.plot(luminosities[:int(len(luminosities) / 2)], Temp_without_daisy[:int(len(luminosities) / 2):],\
+         color = 'darkblue', linestyle =  'dashed', label = "Temperature without Daisies")
+ax2.plot(luminosities[:int(len(luminosities) / 2):], temperatures[:int(len(luminosities) / 2):],\
+         color = 'darkblue', label = "Temperature with Daisies")
+ax2.legend(loc='upper left')
+ax2.set_ylabel("Temperature")
+ax2.set_xlim([0.8,2.8])
+ax2.grid(color = 'grey')
+ax2.set_yticks([0,50,100]) 
+ax2.set_yticklabels([0,50,100])
+ax2.set_ylim([-40,120])
+
+ax3.set_facecolor('darkgrey')
+ax3.plot(luminosities[int(len(luminosities) / 2):], area_black_steady[int(len(luminosities) / 2):],\
+        color = 'black')
+ax3.set_ylabel("Area")
+ax3.set_xlim([0.8,2.8])
+ax3.set_ylim([-0.05,0.8])
+ax3.grid(color = 'grey')
+
+ax4.set_facecolor('darkgrey')
+ax4.plot(luminosities[int(len(luminosities) / 2):], Temp_without_daisy[int(len(luminosities) / 2):],\
+         color = 'darkblue', linestyle =  'dashed', label = "Temperature without Daisies")
+ax4.plot(luminosities[int(len(luminosities) / 2):], temperatures[int(len(luminosities) / 2):],\
+         color = 'darkblue', label = "Temperature with Daisies")
+ax4.legend(loc='lower right')
+ax4.set_xlabel("Luminosity")
+ax4.set_ylabel("Temperature")
+ax4.set_xlim([0.8,2.8])
+ax4.grid(color = 'grey')
+ax4.set_yticks([0,50,100]) 
+ax4.set_yticklabels([0,50,100])
+ax4.set_ylim([-40,120])
+
+
+# Figure 4 report, Combined Run
 fig, (ax1, ax2, ax3, ax4) = plt.subplots(nrows=4, sharex=True)
 
 ax1.set_facecolor('darkgrey')
